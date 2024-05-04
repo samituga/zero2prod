@@ -15,12 +15,11 @@ repos:
 
   - repo: local
     hooks:
-      - id: fmt
-        name: check for errors in the format | execute `cargo fmt`
-        description: Check if all files follow the rustfmt style
+      - id: sort
+        name: check that cargo dependencies are sorted | execute `cargo sort`
         language: system
-        types: [ file, rust ]
-        entry: cargo fmt --check
+        types: [ file, toml ]
+        entry: cargo sort --check
         pass_filenames: false
 
       - id: clippy
@@ -31,9 +30,10 @@ repos:
         entry: cargo clippy --bins --examples --all -- -D warnings
         pass_filenames: false
 
-      - id: sort
-        name: check that cargo dependencies are sorted | execute `cargo sort`
+      - id: fmt
+        name: check for errors in the format | execute `cargo fmt`
+        description: Check if all files follow the rustfmt style
         language: system
-        types: [ file, toml ]
-        entry: cargo sort --check
+        types: [ file, rust ]
+        entry: cargo fmt --check
         pass_filenames: false

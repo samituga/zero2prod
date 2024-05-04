@@ -22,16 +22,15 @@ DB_NAME="${POSTGRES_DB:=newsletter}"
 DB_PORT="${POSTGRES_PORT:=5432}"
 DB_HOST="${POSTGRES_HOST:=localhost}"
 
-if [[ -z "${SKIP_DOCKER}" ]]
-then
-docker run \
-  -e POSTGRES_USER=${DB_USER} \
-  -e POSTGRES_PASSWORD=${DB_PASSWORD} \
-  -e POSTGRES_DB=${DB_NAME} \
-  -p "${DB_PORT}":5432 \
-  -d postgres \
-  postgres -N 1000
-  fi
+if [[ -z "${SKIP_DOCKER}" ]]; then
+  docker run \
+    -e POSTGRES_USER=${DB_USER} \
+    -e POSTGRES_PASSWORD=${DB_PASSWORD} \
+    -e POSTGRES_DB=${DB_NAME} \
+    -p "${DB_PORT}":5432 \
+    -d postgres \
+    postgres -N 1000
+fi
 
 export PGPASSWORD="${DB_PASSWORD}"
 
@@ -46,4 +45,4 @@ export DATABASE_URL
 
 sqlx database create
 sqlx migrate run
->&2 echo "Postgres has been migrated, ready to go!"
+echo >&2 "Postgres has been migrated, ready to go!"
