@@ -40,6 +40,7 @@ jobs:
         run: |
           rustup update stable
           rustup override set stable
+          cargo install cargo-sort
       - name: Install pre-commit
         run: pip install --no-cache-dir pre-commit
       - name: Configure Rust cache
