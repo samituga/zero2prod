@@ -16,7 +16,7 @@ repos:
   - repo: local
     hooks:
       - id: sort
-        name: check that cargo dependencies are sorted | execute `cargo sort`
+        name: check that cargo dependencies are sorted
         language: system
         types: [ file, toml ]
         entry: cargo sort --check
@@ -31,8 +31,8 @@ repos:
         pass_filenames: false
 
       - id: fmt
-        name: check for errors in the format | execute `cargo fmt`
-        description: Check if all files follow the rustfmt style
+        name: check for errors in the format
+        description: check if all files follow the rustfmt style
         language: system
         types: [ file, rust ]
         entry: cargo fmt --check
