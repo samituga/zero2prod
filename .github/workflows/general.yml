@@ -16,29 +16,6 @@ jobs:
       - name: Run tests
         run: cargo test
 
-  fmt:
-    name: Rustfmt
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rustfmt
-      - name: Enforce formatting
-        run: cargo fmt --check
-
-  clippy:
-    name: Clippy
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: clippy
-      - uses: Swatinem/rust-cache@v2
-      - name: Linting
-        run: cargo clippy -- -D warnings
-
   coverage:
     name: Code coverage
     runs-on: ubuntu-latest
@@ -51,3 +28,34 @@ jobs:
       - name: Generate code coverage
         run: |
           cargo tarpaulin --verbose --workspace
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+      - name: Setup Rust
+        run: |
+          rustup update stable
+          rustup override set stable
+      - name: Install pre-commit
+        run: pip install --no-cache-dir pre-commit
+      - name: Configure Rust cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: pre-commit-${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - name: Configure pre-commit cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-${{ runner.os }}-pre-commit-${{ hashFiles('**/.pre-commit-config.yaml') }}
+      - name: Run pre-commit
+        run: pre-commit run --all-files
