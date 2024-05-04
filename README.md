@@ -1,2 +1,2 @@
 Conventions:
-yml over yaml
+.yaml over yml
