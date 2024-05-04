@@ -28,6 +28,7 @@ jobs:
       - name: Generate code coverage
         run: |
           cargo tarpaulin --verbose --workspace
+
   lint:
     name: Lint
     runs-on: ubuntu-latest
@@ -43,16 +44,7 @@ jobs:
           cargo install cargo-sort
       - name: Install pre-commit
         run: pip install --no-cache-dir pre-commit
-      - name: Configure Rust cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: pre-commit-${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - uses: Swatinem/rust-cache@v2
       - name: Configure pre-commit cache
         uses: actions/cache@v4
         with:
