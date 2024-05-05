@@ -32,6 +32,11 @@ jobs:
         with:
           key: sqlx-${{ env.SQLX_VERSION }}
 
+      - name: Cache Docker images
+        uses: ScribeMD/docker-cache@0.5.0
+        with:
+          key: docker-${{ runner.os }}-${{ hashFiles('scripts/init_db.sh') }}
+
       - name: Install sqlx-cli
         run:
           cargo install sqlx-cli
@@ -72,6 +77,11 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           key: sqlx-${{ env.SQLX_VERSION }}
+
+      - name: Cache Docker images
+        uses: ScribeMD/docker-cache@0.5.0
+        with:
+          key: docker-${{ runner.os }}-${{ hashFiles('scripts/init_db.sh') }}
 
       - name: Install sqlx-cli
         run:
@@ -123,6 +133,11 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           key: sqlx-${{ env.SQLX_VERSION }}
+
+      - name: Cache Docker images
+        uses: ScribeMD/docker-cache@0.5.0
+        with:
+          key: docker-${{ runner.os }}-${{ hashFiles('scripts/init_db.sh') }}
 
       - name: Install sqlx-cli
         run:
