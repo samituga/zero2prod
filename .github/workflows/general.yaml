@@ -122,6 +122,8 @@ jobs:
 
       - name: Install the Rust toolchain
         uses: dtolnay/rust-toolchain@stable
+
+      - name: Install missing cargos
         run: |
           cargo install cargo-sort
 
