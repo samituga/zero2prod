@@ -54,53 +54,6 @@ jobs:
       - name: Run tests
         run: cargo test
 
-  coverage:
-    name: Code coverage
-    runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: password
-          POSTGRES_DB: newsletter
-        ports:
-          - 5432:5432
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Install the Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Rust Cache Action
-        uses: Swatinem/rust-cache@v2
-        with:
-          key: sqlx-${{ env.SQLX_VERSION }}
-
-      - name: Cache Docker images
-        uses: ScribeMD/docker-cache@0.5.0
-        with:
-          key: docker-${{ runner.os }}-${{ hashFiles('scripts/init_db.sh') }}
-
-      - name: Install sqlx-cli
-        run:
-          cargo install sqlx-cli
-          --version=${{ env.SQLX_VERSION }}
-          --features ${{ env.SQLX_FEATURES }}
-          --no-default-features
-          --locked
-
-      - name: Install postgresql-client
-        run: sudo apt-get update && sudo apt-get install postgresql-client -y
-
-      - name: Migrate database
-        run: SKIP_DOCKER=true ./scripts/init_db.sh
-
-      - name: Generate code coverage
-        run: |
-          cargo install cargo-tarpaulin && cargo tarpaulin --verbose --workspace
-
   lint:
     name: Lint
     runs-on: ubuntu-latest
