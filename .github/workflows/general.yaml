@@ -32,6 +32,11 @@ jobs:
         with:
           key: sqlx-${{ env.SQLX_VERSION }}
 
+      - name: Cache Docker images
+        uses: ScribeMD/docker-cache@0.5.0
+        with:
+          key: docker-${{ runner.os }}-${{ hashFiles('scripts/init_db.sh') }}
+
       - name: Install sqlx-cli
         run:
           cargo install sqlx-cli
@@ -39,6 +44,7 @@ jobs:
           --features ${{ env.SQLX_FEATURES }}
           --no-default-features
           --locked
+
       - name: Install postgresql-client
         run: sudo apt-get update && sudo apt-get install postgresql-client -y
 
@@ -47,28 +53,6 @@ jobs:
 
       - name: Run tests
         run: cargo test
-
-  coverage:
-    name: Code coverage
-    runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: password
-          POSTGRES_DB: newsletter
-        ports:
-          - 5432:5432
-    container:
-      image: xd009642/tarpaulin
-      options: --security-opt seccomp=unconfined
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Generate code coverage
-        run: |
-          cargo tarpaulin --verbose --workspace
 
   lint:
     name: Lint
@@ -85,20 +69,49 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
       - name: Setup Python
         uses: actions/setup-python@v5
-      - name: Setup Rust
+
+      - name: Install the Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install missing cargos
         run: |
-          rustup update stable
-          rustup override set stable
           cargo install cargo-sort
+
       - name: Install pre-commit
         run: pip install --no-cache-dir pre-commit
-      - uses: Swatinem/rust-cache@v2
+
+      - name: Rust Cache Action
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: sqlx-${{ env.SQLX_VERSION }}
+
+      - name: Cache Docker images
+        uses: ScribeMD/docker-cache@0.5.0
+        with:
+          key: docker-${{ runner.os }}-${{ hashFiles('scripts/init_db.sh') }}
+
+      - name: Install sqlx-cli
+        run:
+          cargo install sqlx-cli
+          --version=${{ env.SQLX_VERSION }}
+          --features ${{ env.SQLX_FEATURES }}
+          --no-default-features
+          --locked
+
+      - name: Install postgresql-client
+        run: sudo apt-get update && sudo apt-get install postgresql-client -y
+
+      - name: Migrate database
+        run: SKIP_DOCKER=true ./scripts/init_db.sh
+
       - name: Configure pre-commit cache
         uses: actions/cache@v4
         with:
           path: ~/.cache/pre-commit
           key: pre-commit-${{ runner.os }}-pre-commit-${{ hashFiles('**/.pre-commit-config.yaml') }}
+
       - name: Run pre-commit
         run: pre-commit run --all-files
