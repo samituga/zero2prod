@@ -66,12 +66,12 @@ jobs:
           POSTGRES_DB: newsletter
         ports:
           - 5432:5432
-    container:
-      image: xd009642/tarpaulin
-      options: --security-opt seccomp=unconfined
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Install the Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Rust Cache Action
         uses: Swatinem/rust-cache@v2
@@ -120,11 +120,8 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
 
-      - name: Setup Rust
-        run: |
-          rustup update stable
-          rustup override set stable
-          cargo install cargo-sort
+      - name: Install the Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Install pre-commit
         run: pip install --no-cache-dir pre-commit
