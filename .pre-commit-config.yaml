@@ -30,6 +30,13 @@ repos:
         entry: cargo clippy --bins --examples --all -- -D warnings
         pass_filenames: false
 
+      - id: sqlx
+        name: check if sqlx offline data us up-to-date
+        language: system
+        types: [ file, json ]
+        entry: cargo sqlx prepare --workspace --check
+        pass_filenames: false
+
       - id: fmt
         name: check for errors in the format
         description: check if all files follow the rustfmt style
