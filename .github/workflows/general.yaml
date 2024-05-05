@@ -39,6 +39,7 @@ jobs:
           --features ${{ env.SQLX_FEATURES }}
           --no-default-features
           --locked
+
       - name: Install postgresql-client
         run: sudo apt-get update && sudo apt-get install postgresql-client -y
 
@@ -66,6 +67,26 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Rust Cache Action
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: sqlx-${{ env.SQLX_VERSION }}
+
+      - name: Install sqlx-cli
+        run:
+          cargo install sqlx-cli
+          --version=${{ env.SQLX_VERSION }}
+          --features ${{ env.SQLX_FEATURES }}
+          --no-default-features
+          --locked
+
+      - name: Install postgresql-client
+        run: sudo apt-get update && sudo apt-get install postgresql-client -y
+
+      - name: Migrate database
+        run: SKIP_DOCKER=true ./scripts/init_db.sh
+
       - name: Generate code coverage
         run: |
           cargo tarpaulin --verbose --workspace
@@ -85,20 +106,43 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
       - name: Setup Python
         uses: actions/setup-python@v5
+
       - name: Setup Rust
         run: |
           rustup update stable
           rustup override set stable
           cargo install cargo-sort
+
       - name: Install pre-commit
         run: pip install --no-cache-dir pre-commit
-      - uses: Swatinem/rust-cache@v2
+
+      - name: Rust Cache Action
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: sqlx-${{ env.SQLX_VERSION }}
+
+      - name: Install sqlx-cli
+        run:
+          cargo install sqlx-cli
+          --version=${{ env.SQLX_VERSION }}
+          --features ${{ env.SQLX_FEATURES }}
+          --no-default-features
+          --locked
+
+      - name: Install postgresql-client
+        run: sudo apt-get update && sudo apt-get install postgresql-client -y
+
+      - name: Migrate database
+        run: SKIP_DOCKER=true ./scripts/init_db.sh
+
       - name: Configure pre-commit cache
         uses: actions/cache@v4
         with:
           path: ~/.cache/pre-commit
           key: pre-commit-${{ runner.os }}-pre-commit-${{ hashFiles('**/.pre-commit-config.yaml') }}
+
       - name: Run pre-commit
         run: pre-commit run --all-files
