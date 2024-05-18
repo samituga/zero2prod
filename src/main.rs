@@ -17,7 +17,7 @@ async fn main() -> Result<(), std::io::Error> {
     // TODO use connect instead of connect_lazy
     let connection_pool =
         PgPool::connect_lazy(configuration.database.connection_string().expose_secret())
-            .expect("Failed to connect to Postgres.");
+            .expect("Failed to connect to Postgres DB.");
 
     let address = format!(
         "{}:{}",

@@ -6,19 +6,28 @@ phases:
       - echo Logging in to Amazon ECR...
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $REPOSITORY_URI
       - echo Pulling the previous image to use as cache...
+      - docker pull $REPOSITORY_URI:chef || echo "No existing image found, proceeding without cache"
+      - docker pull $REPOSITORY_URI:planner || echo "No existing image found, proceeding without cache"
+      - docker pull $REPOSITORY_URI:builder || echo "No existing image found, proceeding without cache"
       - docker pull $REPOSITORY_URI:latest || echo "No existing image found, proceeding without cache"
 
   build:
     commands:
       - echo Building the Docker image...
-      - docker build --pull --progress=plain --cache-from $REPOSITORY_URI:latest --build-arg BUILDKIT_INLINE_CACHE=1 --tag rust-server:latest --file Dockerfile .
+      - docker build --pull --progress=plain --cache-from $REPOSITORY_URI:chef --cache-from $REPOSITORY_URI:planner --cache-from $REPOSITORY_URI:builder --cache-from $REPOSITORY_URI:latest --build-arg BUILDKIT_INLINE_CACHE=1 --tag rust-server:latest --file Dockerfile .
       - echo Tagging the Docker image...
       - docker tag rust-server:latest $REPOSITORY_URI:latest
+      - docker tag rust-server:chef $REPOSITORY_URI:chef
+      - docker tag rust-server:planner $REPOSITORY_URI:planner
+      - docker tag rust-server:builder $REPOSITORY_URI:builder
 
   post_build:
     commands:
       - echo Pushing the Docker image...
       - docker push $REPOSITORY_URI:latest
+      - docker push $REPOSITORY_URI:chef
+      - docker push $REPOSITORY_URI:planner
+      - docker push $REPOSITORY_URI:builder
       - echo Writing image definitions file...
       - printf '[{"name":"rust-server","imageUri":"%s"}]' $REPOSITORY_URI:latest > imagedefinitions.json
 
