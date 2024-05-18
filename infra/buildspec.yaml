@@ -20,9 +20,9 @@ phases:
 artifacts:
   files: imagedefinitions.json
 
-cache:
-  paths:
-    - '/root/.cargo/registry/***'
-    - '/root/.cargo/git/***'
-    - 'recipe.json'
-    - 'target/***'
+# cache:
+#   paths:
+#     - '/root/.cargo/registry/***'
+#     - '/root/.cargo/git/***'
+#     - 'recipe.json'
+#     - 'target/***'
