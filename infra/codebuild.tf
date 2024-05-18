@@ -11,6 +11,11 @@ resource "aws_codebuild_project" "rust_server_build" {
     type                        = "LINUX_CONTAINER"
     privileged_mode             = true
     image_pull_credentials_type = "CODEBUILD"
+
+    environment_variable {
+      name  = "REPOSITORY_URI"
+      value = aws_ecr_repository.rust_server.repository_url
+    }
   }
 
   source {
