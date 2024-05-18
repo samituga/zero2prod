@@ -6,8 +6,8 @@ resource "aws_ecs_cluster" "main" {
   name = var.ecs_cluster_name
 }
 
-resource "aws_iam_role" "ecs_task_execution" {
-  name = "ecsTaskExecutionRole"
+resource "aws_iam_role" "ecs_task_execution_new" {
+  name = "ecsTaskExecutionRoleNew"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -24,7 +24,7 @@ resource "aws_iam_role" "ecs_task_execution" {
 }
 
 resource "aws_iam_role_policy_attachment" "ecs_task_execution" {
-  role       = aws_iam_role.ecs_task_execution.name
+  role       = aws_iam_role.ecs_task_execution_new.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
@@ -34,7 +34,7 @@ resource "aws_ecs_task_definition" "rust_server" {
   requires_compatibilities = ["FARGATE"]
   cpu                      = "256"
   memory                   = "512"
-  execution_role_arn       = aws_iam_role.ecs_task_execution.arn
+  execution_role_arn       = aws_iam_role.ecs_task_execution_new.arn
   container_definitions    = jsonencode([
     {
       name      = "rust-server"

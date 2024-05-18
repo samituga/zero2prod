@@ -5,20 +5,21 @@ resource "aws_codebuild_project" "rust_server_build" {
     type = "NO_ARTIFACTS"
   }
   environment {
-    compute_type = "BUILD_GENERAL1_SMALL"
-    image        = "aws/codebuild/standard:4.0"
-    type         = "LINUX_CONTAINER"
-    environment_variable = {
+    compute_type    = "BUILD_GENERAL1_SMALL"
+    image           = "aws/codebuild/standard:4.0"
+    type            = "LINUX_CONTAINER"
+    privileged_mode = true
+
+    environment_variable {
       name  = "REPOSITORY_URI"
       value = aws_ecr_repository.rust_server.repository_url
     }
 
-    privileged_mode = true
   }
   source {
     type      = "GITHUB"
     location  = "https://github.com/${var.github_username}/${var.github_repository}.git"
-    buildspec = file("infra/buildspec.yaml")
+    buildspec = file("buildspec.yaml")
   }
 }
 
