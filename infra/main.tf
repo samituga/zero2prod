@@ -10,7 +10,7 @@ resource "aws_iam_role" "ecs_task_execution_new" {
   name = "ecsTaskExecutionRoleNew"
 
   assume_role_policy = jsonencode({
-    Version = "2012-10-17"
+    Version   = "2012-10-17"
     Statement = [
       {
         Action = "sts:AssumeRole"
@@ -28,6 +28,20 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
+resource "aws_iam_role_policy_attachment" "ecs_task_execution_ecr" {
+  role       = aws_iam_role.ecs_task_execution_new.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+}
+
+resource "aws_cloudwatch_log_group" "ecs_log_group" {
+  name = "/ecs/rust-server"
+  retention_in_days = 7
+
+  tags = {
+    Name = "ecs-log-group"
+  }
+}
+
 resource "aws_ecs_task_definition" "rust_server" {
   family                   = "rust-server-task"
   network_mode             = "awsvpc"
@@ -37,9 +51,9 @@ resource "aws_ecs_task_definition" "rust_server" {
   execution_role_arn       = aws_iam_role.ecs_task_execution_new.arn
   container_definitions    = jsonencode([
     {
-      name      = "rust-server"
-      image     = "${aws_ecr_repository.rust_server.repository_url}:latest"  # Using latest image
-      essential = true
+      name         = "rust-server"
+      image        = "${aws_ecr_repository.rust_server.repository_url}:latest"
+      essential    = true
       portMappings = [
         {
           containerPort = 8080
@@ -50,7 +64,7 @@ resource "aws_ecs_task_definition" "rust_server" {
       logConfiguration = {
         logDriver = "awslogs"
         options = {
-          awslogs-group         = "/ecs/rust-server"
+          awslogs-group         = aws_cloudwatch_log_group.ecs_log_group.name
           awslogs-region        = var.aws_region
           awslogs-stream-prefix = "ecs"
         }
