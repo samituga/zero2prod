@@ -39,6 +39,11 @@ resource "aws_iam_role_policy_attachment" "codepipeline_ecs_access" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonECS_FullAccess"
 }
 
+resource "aws_iam_role_policy_attachment" "codepipeline_codestar_access" {
+  role       = aws_iam_role.codepipeline.name
+  policy_arn = "arn:aws:iam::aws:policy/AWSCodeStarFullAccess"
+}
+
 resource "aws_codepipeline" "rust_server_pipeline" {
   name     = "rust-server-pipeline"
   role_arn = aws_iam_role.codepipeline.arn
@@ -53,15 +58,14 @@ resource "aws_codepipeline" "rust_server_pipeline" {
     action {
       name             = "Source"
       category         = "Source"
-      owner            = "ThirdParty"
-      provider         = "GitHub"
+      owner            = "AWS"
+      provider         = "CodeStarSourceConnection"
       version          = "1"
       output_artifacts = ["source_output"]
       configuration = {
-        Owner      = var.github_username
-        Repo       = var.github_repository
-        Branch     = "main"
-        OAuthToken = var.github_token
+        ConnectionArn    = aws_codestarconnections_connection.github_connection.arn
+        FullRepositoryId = "${var.github_username}/${var.github_repository}"
+        BranchName       = "main"
       }
     }
   }
