@@ -24,7 +24,26 @@ resource "aws_iam_role" "codepipeline" {
       }
     ]
   })
+
+  inline_policy {
+    name   = "CodeStarConnectionPolicy"
+    policy = jsonencode({
+      Version   = "2012-10-17"
+      Statement = [
+        {
+          Effect = "Allow"
+          Action = [
+            "codestar-connections:UseConnection"
+          ]
+          Resource = [
+            aws_codestarconnections_connection.github_connection.arn
+          ]
+        }
+      ]
+    })
+  }
 }
+
 
 resource "aws_iam_role_policy_attachment" "codepipeline" {
   role       = aws_iam_role.codepipeline.name
