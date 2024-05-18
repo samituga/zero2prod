@@ -7,17 +7,20 @@ phases:
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $REPOSITORY_URI
       - echo Pulling the previous image to use as cache...
       - docker pull $REPOSITORY_URI:latest || echo "No existing image found, proceeding without cache"
+
   build:
     commands:
       - echo Building the Docker image...
-      - docker build --progress=plain --cache-from $REPOSITORY_URI:latest --tag rust-server --file Dockerfile .
+      - docker build --pull --progress=plain --cache-from $REPOSITORY_URI:latest --build-arg BUILDKIT_INLINE_CACHE=1 --tag rust-server:latest --file Dockerfile .
       - echo Tagging the Docker image...
       - docker tag rust-server:latest $REPOSITORY_URI:latest
+
   post_build:
     commands:
       - echo Pushing the Docker image...
       - docker push $REPOSITORY_URI:latest
       - echo Writing image definitions file...
       - printf '[{"name":"rust-server","imageUri":"%s"}]' $REPOSITORY_URI:latest > imagedefinitions.json
+
 artifacts:
   files: imagedefinitions.json
