@@ -10,7 +10,7 @@ phases:
   build:
     commands:
       - echo Building the Docker image...
-      - docker build --cache-from $REPOSITORY_URI:latest --tag rust-server .
+      - docker build --progress=plain --cache-from $REPOSITORY_URI:latest --tag rust-server --file Dockerfile .
       - echo Tagging the Docker image...
       - docker tag rust-server:latest $REPOSITORY_URI:latest
   post_build:
