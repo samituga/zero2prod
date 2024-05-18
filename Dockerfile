@@ -3,14 +3,14 @@ WORKDIR /app
 RUN apt update && apt install lld clang -y
 
 FROM chef as planner
-COPY . /app
+COPY . .
 RUN cargo chef prepare --recipe-path recipe.json
 
 FROM chef as builder
 COPY --from=planner /app/recipe.json recipe.json
 RUN cargo chef cook --release --recipe-path recipe.json
 
-COPY . /app
+COPY . .
 ENV SQLX_OFFLINE true
 RUN cargo build --release --bin zero2prod
 
