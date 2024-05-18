@@ -6,13 +6,20 @@ resource "aws_iam_role" "codepipeline" {
   name = "codepipeline-role"
 
   assume_role_policy = jsonencode({
-    Version = "2012-10-17"
+    Version   = "2012-10-17"
     Statement = [
       {
         Action = "sts:AssumeRole"
         Effect = "Allow"
         Principal = {
           Service = "codepipeline.amazonaws.com"
+        }
+      },
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "codestar.amazonaws.com"
         }
       }
     ]
@@ -89,16 +96,16 @@ resource "aws_codepipeline" "rust_server_pipeline" {
   stage {
     name = "Deploy"
     action {
-      name             = "Deploy"
-      category         = "Deploy"
-      owner            = "AWS"
-      provider         = "ECS"
-      version          = "1"
-      input_artifacts  = ["build_output"]
+      name            = "Deploy"
+      category        = "Deploy"
+      owner           = "AWS"
+      provider        = "ECS"
+      version         = "1"
+      input_artifacts = ["build_output"]
       configuration = {
-        ClusterName     = aws_ecs_cluster.main.name
-        ServiceName     = aws_ecs_service.rust_server.name
-        FileName        = "imagedefinitions.json"
+        ClusterName = aws_ecs_cluster.main.name
+        ServiceName = aws_ecs_service.rust_server.name
+        FileName    = "imagedefinitions.json"
       }
     }
   }
