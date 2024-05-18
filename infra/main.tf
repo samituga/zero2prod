@@ -34,7 +34,7 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution_ecr" {
 }
 
 resource "aws_cloudwatch_log_group" "ecs_log_group" {
-  name = "/ecs/rust-server"
+  name              = "/ecs/rust-server"
   retention_in_days = 7
 
   tags = {
@@ -98,6 +98,12 @@ resource "aws_ecs_service" "rust_server" {
   launch_type     = "FARGATE"
   desired_count   = 1
 
+  load_balancer {
+    target_group_arn = aws_lb_target_group.ecs.arn
+    container_name   = "rust-server"
+    container_port   = 8080
+  }
+
   network_configuration {
     subnets          = aws_subnet.public[*].id
     assign_public_ip = true
@@ -107,4 +113,6 @@ resource "aws_ecs_service" "rust_server" {
   deployment_controller {
     type = "ECS"
   }
+
+  depends_on = [aws_lb_listener.http]
 }
