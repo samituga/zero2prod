@@ -1,5 +1,5 @@
 Conventions:
-.yaml over yml
+.yaml
 
 dependencies:
 
