@@ -24,5 +24,3 @@ cache:
   paths:
     - '/root/.cargo/registry/***'
     - '/root/.cargo/git/***'
-    - '$CODEBUILD_SRC_DIR/recipe.json'
-    - '$CODEBUILD_SRC_DIR/target/***'
