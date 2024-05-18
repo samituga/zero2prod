@@ -24,6 +24,11 @@ resource "aws_iam_role_policy_attachment" "codepipeline" {
   policy_arn = "arn:aws:iam::aws:policy/AWSCodePipeline_FullAccess"
 }
 
+resource "aws_iam_role_policy_attachment" "codepipeline_s3_access" {
+  role       = aws_iam_role.codepipeline.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+}
+
 resource "aws_codepipeline" "rust_server_pipeline" {
   name     = "rust-server-pipeline"
   role_arn = aws_iam_role.codepipeline.arn
