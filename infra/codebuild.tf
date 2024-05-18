@@ -54,3 +54,8 @@ resource "aws_iam_role_policy_attachment" "codebuild_s3_access" {
   role       = aws_iam_role.codebuild.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonS3FullAccess"
 }
+
+resource "aws_iam_role_policy_attachment" "codebuild_ecr_access" {
+  role       = aws_iam_role.codebuild.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+}
