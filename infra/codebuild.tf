@@ -5,11 +5,6 @@ resource "aws_codebuild_project" "rust_server_build" {
     type = "CODEPIPELINE"
   }
 
-  cache {
-    type  = "LOCAL"
-    modes = ["LOCAL_DOCKER_LAYER_CACHE", "LOCAL_SOURCE_CACHE", "LOCAL_CUSTOM_CACHE"]
-  }
-
   environment {
     compute_type                = "BUILD_GENERAL1_SMALL"
     image                       = "aws/codebuild/standard:7.0"
@@ -46,9 +41,44 @@ resource "aws_iam_role" "codebuild" {
   })
 }
 
+resource "aws_iam_policy" "codebuild_docker_cache_policy" {
+  name        = "CodeBuildDockerCachePolicy"
+  description = "Policy for Docker caching in CodeBuild"
+  policy      = jsonencode({
+    "Version" : "2012-10-17",
+    "Statement" : [
+      {
+        "Effect" : "Allow",
+        "Action" : [
+          "ecr:GetAuthorizationToken",
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:GetRepositoryPolicy",
+          "ecr:DescribeRepositories",
+          "ecr:ListImages",
+          "ecr:DescribeImages",
+          "ecr:BatchGetImage",
+          "ecr:ListTagsForResource",
+          "ecr:DescribeImageScanFindings",
+          "ecr:InitiateLayerUpload",
+          "ecr:UploadLayerPart",
+          "ecr:CompleteLayerUpload",
+          "ecr:PutImage"
+        ],
+        "Resource" : "*"
+      }
+    ]
+  })
+}
+
 resource "aws_iam_role_policy_attachment" "codebuild" {
   role       = aws_iam_role.codebuild.name
   policy_arn = "arn:aws:iam::aws:policy/AWSCodeBuildDeveloperAccess"
+}
+
+resource "aws_iam_role_policy_attachment" "codebuild_docker_cache_attachment" {
+  role       = aws_iam_role.codebuild.name
+  policy_arn = aws_iam_policy.codebuild_docker_cache_policy.arn
 }
 
 resource "aws_iam_role_policy_attachment" "codebuild_cloudwatch_access" {

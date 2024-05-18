@@ -5,10 +5,12 @@ phases:
     commands:
       - echo Logging in to Amazon ECR...
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $REPOSITORY_URI
+      - echo Pulling the previous image to use as cache...
+      - docker pull $REPOSITORY_URI:latest || true
   build:
     commands:
       - echo Building the Docker image...
-      - docker build -t rust-server .
+      - docker build --cache-from $REPOSITORY_URI:latest -t rust-server .
       - echo Tagging the Docker image...
       - docker tag rust-server:latest $REPOSITORY_URI:latest
   post_build:
@@ -19,8 +21,3 @@ phases:
       - printf '[{"name":"rust-server","imageUri":"%s"}]' $REPOSITORY_URI:latest > imagedefinitions.json
 artifacts:
   files: imagedefinitions.json
-
-cache:
-  paths:
-    - '/root/.cargo/registry/***'
-    - '/root/.cargo/git/***'
