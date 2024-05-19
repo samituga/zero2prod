@@ -7,45 +7,17 @@ phases:
       - echo Logging in to Amazon ECR...
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $REPOSITORY_URI
       - echo Pulling the previous image to use as cache...
-      - docker pull $REPOSITORY_URI:chef || echo "No existing image found, proceeding without cache"
-      - docker pull $REPOSITORY_URI:planner || echo "No existing image found, proceeding without cache"
       - docker pull $REPOSITORY_URI:builder || echo "No existing image found, proceeding without cache"
       - docker pull $REPOSITORY_URI:latest || echo "No existing image found, proceeding without cache"
 
   build:
     commands:
       - echo Building the intermediate Docker stages...
-      - |
-        docker build \
-        --progress=plain \
-        --target chef \
-        --cache-from $REPOSITORY_URI:chef \
-        --build-arg BUILDKIT_INLINE_CACHE=1 \
-        --tag $API_IMAGE_REPO_NAME:chef \
-        --file Dockerfile .
-      - |
-        docker tag $API_IMAGE_REPO_NAME:chef \
-        $REPOSITORY_URI:chef
-
-      - |
-        docker build \
-        --progress=plain \
-        --target planner \
-        --cache-from $REPOSITORY_URI:chef \
-        --cache-from $REPOSITORY_URI:planner \
-        --build-arg BUILDKIT_INLINE_CACHE=1 \
-        --tag $API_IMAGE_REPO_NAME:planner \
-        --file Dockerfile .
-      - |
-        docker tag $API_IMAGE_REPO_NAME:planner \
-        $REPOSITORY_URI:planner
 
       - |
         docker build \
         --progress=plain \
         --target builder \
-        --cache-from $REPOSITORY_URI:chef \
-        --cache-from $REPOSITORY_URI:planner \
         --cache-from $REPOSITORY_URI:builder \
         --build-arg BUILDKIT_INLINE_CACHE=1 \
         --tag $API_IMAGE_REPO_NAME:builder \
@@ -57,8 +29,6 @@ phases:
       - |
         docker build \
         --progress=plain \
-        --cache-from $REPOSITORY_URI:chef \
-        --cache-from $REPOSITORY_URI:planner \
         --cache-from $REPOSITORY_URI:builder \
         --cache-from $REPOSITORY_URI:latest \
         --build-arg BUILDKIT_INLINE_CACHE=1 \
@@ -79,8 +49,6 @@ phases:
       - docker push $REPOSITORY_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION
       - docker push $REPOSITORY_URI:latest
       - docker push $REPOSITORY_URI:builder
-      - docker push $REPOSITORY_URI:planner
-      - docker push $REPOSITORY_URI:chef
       - echo Writing image definitions file...
       - printf '[{"name":"rust-server","imageUri":"%s"}]' $REPOSITORY_URI:latest > imagedefinitions.json
 
