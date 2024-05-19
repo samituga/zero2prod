@@ -10,12 +10,18 @@ phases:
       - docker pull $REPOSITORY_URI:planner || echo "No existing image found, proceeding without cache"
       - docker pull $REPOSITORY_URI:builder || echo "No existing image found, proceeding without cache"
       - docker pull $REPOSITORY_URI:latest || echo "No existing image found, proceeding without cache"
+      - |
+        if ! [[ "CODEBUILD_WEBHOOK_TRIGGER" =~ ^[a-zA-Z0-9._-]+$ ]]; then
+          echo "Invalid CODEBUILD_WEBHOOK_TRIGGER - CODEBUILD_WEBHOOK_TRIGGER"
+          exit 1
+        fi
 
   build:
     commands:
       - echo Building the intermediate Docker stages...
       - |
         docker build \
+        --progress=plain \
         --target chef \
         --cache-from $REPOSITORY_URI:chef \
         --build-arg BUILDKIT_INLINE_CACHE=1 \
@@ -27,6 +33,7 @@ phases:
 
       - |
         docker build \
+        --progress=plain \
         --target planner \
         --cache-from $REPOSITORY_URI:chef \
         --cache-from $REPOSITORY_URI:planner \
@@ -39,6 +46,7 @@ phases:
 
       - |
         docker build \
+        --progress=plain \
         --target builder \
         --cache-from $REPOSITORY_URI:chef \
         --cache-from $REPOSITORY_URI:planner \
@@ -52,26 +60,27 @@ phases:
 
       - |
         docker build \
+        --progress=plain \
         --cache-from $REPOSITORY_URI:chef \
         --cache-from $REPOSITORY_URI:planner \
         --cache-from $REPOSITORY_URI:builder \
         --cache-from $REPOSITORY_URI:latest \
         --build-arg BUILDKIT_INLINE_CACHE=1 \
-        --tag $API_IMAGE_REPO_NAME:$CODEBUILD_SOURCE_VERSION \
+        --tag $API_IMAGE_REPO_NAME:$CODEBUILD_WEBHOOK_TRIGGER \
         --file Dockerfile .
       - |
         docker tag \
-        $API_IMAGE_REPO_NAME:$CODEBUILD_SOURCE_VERSION \
-        $REPOSITORY_URI:$CODEBUILD_SOURCE_VERSION
+        $API_IMAGE_REPO_NAME:$CODEBUILD_WEBHOOK_TRIGGER \
+        $REPOSITORY_URI:$CODEBUILD_WEBHOOK_TRIGGER
       - |
         docker tag \
-        $API_IMAGE_REPO_NAME:$CODEBUILD_SOURCE_VERSION \
+        $API_IMAGE_REPO_NAME:$CODEBUILD_WEBHOOK_TRIGGER \
         $REPOSITORY_URI:latest
 
   post_build:
     commands:
       - echo Pushing the Docker image...
-      - docker push $REPOSITORY_URI:$CODEBUILD_SOURCE_VERSION
+      - docker push $REPOSITORY_URI:$CODEBUILD_WEBHOOK_TRIGGER
       - docker push $REPOSITORY_URI:latest
       - docker push $REPOSITORY_URI:builder
       - docker push $REPOSITORY_URI:planner
