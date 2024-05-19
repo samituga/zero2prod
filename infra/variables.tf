@@ -13,6 +13,12 @@ variable "ecs_service_name" {
   default     = "rust-server-service"
 }
 
+variable "api_image_repo_name" {
+  description = "API image repository name"
+  type        = string
+  default = "rust-server"
+}
+
 variable "github_token" {
   description = "The GitHub OAuth token"
   type        = string

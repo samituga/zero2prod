@@ -16,6 +16,11 @@ resource "aws_codebuild_project" "rust_server_build" {
       name  = "REPOSITORY_URI"
       value = aws_ecr_repository.rust_server.repository_url
     }
+
+    environment_variable {
+      name  = "API_IMAGE_REPO_NAME"
+      value = var.api_image_repo_name
+    }
   }
 
   source {

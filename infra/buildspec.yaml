@@ -13,21 +13,69 @@ phases:
 
   build:
     commands:
-      - echo Building the Docker image...
-      - docker build --pull --progress=plain --cache-from $REPOSITORY_URI:chef --cache-from $REPOSITORY_URI:planner --cache-from $REPOSITORY_URI:builder --cache-from $REPOSITORY_URI:latest --build-arg BUILDKIT_INLINE_CACHE=1 --tag rust-server:latest --file Dockerfile .
-      - echo Tagging the Docker image...
-      - docker tag rust-server:latest $REPOSITORY_URI:latest
-      - docker tag rust-server:chef $REPOSITORY_URI:chef
-      - docker tag rust-server:planner $REPOSITORY_URI:planner
-      - docker tag rust-server:builder $REPOSITORY_URI:builder
+      - echo Building the intermediate Docker stages...
+      - |
+        docker build \
+        --target chef \
+        --cache-from $REPOSITORY_URI:chef \
+        --build-arg BUILDKIT_INLINE_CACHE=1 \
+        --tag $API_IMAGE_REPO_NAME:chef \
+        --file Dockerfile .
+      - |
+        docker tag $API_IMAGE_REPO_NAME:chef \
+        $REPOSITORY_URI:chef
+
+      - |
+        docker build \
+        --target planner \
+        --cache-from $REPOSITORY_URI:chef \
+        --cache-from $REPOSITORY_URI:planner \
+        --build-arg BUILDKIT_INLINE_CACHE=1 \
+        --tag $API_IMAGE_REPO_NAME:planner \
+        --file Dockerfile .
+      - |
+        docker tag $API_IMAGE_REPO_NAME:planner \
+        $REPOSITORY_URI:planner
+
+      - |
+        docker build \
+        --target builder \
+        --cache-from $REPOSITORY_URI:chef \
+        --cache-from $REPOSITORY_URI:planner \
+        --cache-from $REPOSITORY_URI:builder \
+        --build-arg BUILDKIT_INLINE_CACHE=1 \
+        --tag $API_IMAGE_REPO_NAME:builder \
+        --file Dockerfile .
+      - |
+        docker tag $API_IMAGE_REPO_NAME:builder \
+        $REPOSITORY_URI:builder
+
+      - |
+        docker build \
+        --cache-from $REPOSITORY_URI:chef \
+        --cache-from $REPOSITORY_URI:planner \
+        --cache-from $REPOSITORY_URI:builder \
+        --cache-from $REPOSITORY_URI:latest \
+        --build-arg BUILDKIT_INLINE_CACHE=1 \
+        --tag $API_IMAGE_REPO_NAME:$CODEBUILD_SOURCE_VERSION \
+        --file Dockerfile .
+      - |
+        docker tag \
+        $API_IMAGE_REPO_NAME:$CODEBUILD_SOURCE_VERSION \
+        $REPOSITORY_URI:$CODEBUILD_SOURCE_VERSION
+      - |
+        docker tag \
+        $API_IMAGE_REPO_NAME:$CODEBUILD_SOURCE_VERSION \
+        $REPOSITORY_URI:latest
 
   post_build:
     commands:
       - echo Pushing the Docker image...
+      - docker push $REPOSITORY_URI:$CODEBUILD_SOURCE_VERSION
       - docker push $REPOSITORY_URI:latest
-      - docker push $REPOSITORY_URI:chef
-      - docker push $REPOSITORY_URI:planner
       - docker push $REPOSITORY_URI:builder
+      - docker push $REPOSITORY_URI:planner
+      - docker push $REPOSITORY_URI:chef
       - echo Writing image definitions file...
       - printf '[{"name":"rust-server","imageUri":"%s"}]' $REPOSITORY_URI:latest > imagedefinitions.json
 
