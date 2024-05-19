@@ -10,9 +10,10 @@ phases:
       - docker pull $REPOSITORY_URI:planner || echo "No existing image found, proceeding without cache"
       - docker pull $REPOSITORY_URI:builder || echo "No existing image found, proceeding without cache"
       - docker pull $REPOSITORY_URI:latest || echo "No existing image found, proceeding without cache"
+      - echo $CODEBUILD_RESOLVED_SOURCE_VERSION
       - |
-        if ! [[ "CODEBUILD_WEBHOOK_TRIGGER" =~ ^[a-zA-Z0-9._-]+$ ]]; then
-          echo "Invalid CODEBUILD_WEBHOOK_TRIGGER - CODEBUILD_WEBHOOK_TRIGGER"
+        if ! [[ "CODEBUILD_RESOLVED_SOURCE_VERSION" =~ ^[a-zA-Z0-9._-]+$ ]]; then
+          echo "Invalid CODEBUILD_RESOLVED_SOURCE_VERSION - CODEBUILD_RESOLVED_SOURCE_VERSION"
           exit 1
         fi
 
@@ -66,21 +67,21 @@ phases:
         --cache-from $REPOSITORY_URI:builder \
         --cache-from $REPOSITORY_URI:latest \
         --build-arg BUILDKIT_INLINE_CACHE=1 \
-        --tag $API_IMAGE_REPO_NAME:$CODEBUILD_WEBHOOK_TRIGGER \
+        --tag $API_IMAGE_REPO_NAME:$CODEBUILD_RESOLVED_SOURCE_VERSION \
         --file Dockerfile .
       - |
         docker tag \
-        $API_IMAGE_REPO_NAME:$CODEBUILD_WEBHOOK_TRIGGER \
-        $REPOSITORY_URI:$CODEBUILD_WEBHOOK_TRIGGER
+        $API_IMAGE_REPO_NAME:$CODEBUILD_RESOLVED_SOURCE_VERSION \
+        $REPOSITORY_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION
       - |
         docker tag \
-        $API_IMAGE_REPO_NAME:$CODEBUILD_WEBHOOK_TRIGGER \
+        $API_IMAGE_REPO_NAME:$CODEBUILD_RESOLVED_SOURCE_VERSION \
         $REPOSITORY_URI:latest
 
   post_build:
     commands:
       - echo Pushing the Docker image...
-      - docker push $REPOSITORY_URI:$CODEBUILD_WEBHOOK_TRIGGER
+      - docker push $REPOSITORY_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION
       - docker push $REPOSITORY_URI:latest
       - docker push $REPOSITORY_URI:builder
       - docker push $REPOSITORY_URI:planner
