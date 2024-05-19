@@ -10,12 +10,6 @@ phases:
       - docker pull $REPOSITORY_URI:planner || echo "No existing image found, proceeding without cache"
       - docker pull $REPOSITORY_URI:builder || echo "No existing image found, proceeding without cache"
       - docker pull $REPOSITORY_URI:latest || echo "No existing image found, proceeding without cache"
-      - echo $CODEBUILD_RESOLVED_SOURCE_VERSION
-      - |
-        if ! [[ "CODEBUILD_RESOLVED_SOURCE_VERSION" =~ ^[a-zA-Z0-9._-]+$ ]]; then
-          echo "Invalid CODEBUILD_RESOLVED_SOURCE_VERSION - CODEBUILD_RESOLVED_SOURCE_VERSION"
-          exit 1
-        fi
 
   build:
     commands:
