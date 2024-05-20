@@ -16,7 +16,7 @@ variable "ecs_service_name" {
 variable "image_repo_name" {
   description = "image repository name"
   type        = string
-  default = "rust-server"
+  default     = "rust-server"
 }
 
 variable "github_token" {
@@ -31,5 +31,20 @@ variable "github_repository" {
 
 variable "github_username" {
   description = "The GitHub username"
+  type        = string
+}
+
+variable "db_name" {
+  description = "The database name"
+  type        = string
+}
+
+variable "db_username" {
+  description = "The database credential username"
+  type        = string
+}
+
+variable "db_password" {
+  description = "The database credential password"
   type        = string
 }

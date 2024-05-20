@@ -28,7 +28,7 @@ if [[ -z "${SKIP_DOCKER}" ]]; then
     -e POSTGRES_PASSWORD=${DB_PASSWORD} \
     -e POSTGRES_DB=${DB_NAME} \
     -p "${DB_PORT}":5432 \
-    -d postgres:16 \
+    -d postgres:16.2 \
     postgres -N 1000
 fi
 
