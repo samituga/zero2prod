@@ -19,6 +19,8 @@ async fn main() -> Result<(), std::io::Error> {
         PgPool::connect_lazy(configuration.database.connection_string().expose_secret())
             .expect("Failed to connect to Postgres.");
 
+    println!("code change to miss build cache");
+
     let address = format!(
         "{}:{}",
         configuration.application.host, configuration.application.port
