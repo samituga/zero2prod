@@ -17,7 +17,7 @@ RUN cargo chef cook --release --recipe-path recipe.json
 FROM depbuilder as builder
 COPY . .
 ENV SQLX_OFFLINE true
-rustup default nightly
+RUN rustup default nightly
 RUN cargo build --release --bin zero2prod
 
 FROM public.ecr.aws/debian/debian:bookworm-slim AS runtime
