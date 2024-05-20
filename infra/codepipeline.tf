@@ -111,4 +111,21 @@ resource "aws_codepipeline" "rust_server_pipeline" {
       }
     }
   }
+
+  stage {
+    name = "Deploy"
+    action {
+      name            = "Deploy"
+      category        = "Deploy"
+      owner           = "AWS"
+      provider        = "ECS"
+      version         = "1"
+      input_artifacts = ["build_output"]
+      configuration = {
+        ClusterName = aws_ecs_cluster.main.name
+        ServiceName = aws_ecs_service.rust_server.name
+        FileName    = "imagedefinitions.json"
+      }
+    }
+  }
 }

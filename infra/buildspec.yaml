@@ -55,12 +55,8 @@ phases:
       - echo Pushing the Docker image...
       - docker push $REPOSITORY_URI:latest
       - docker push $REPOSITORY_URI:depbuilder
-#       - echo Writing image definitions file...
-#       - printf '[{"name":"rust-server","imageUri":"%s"}]' $REPOSITORY_URI:latest > imagedefinitions.json
+      - echo Writing image definitions file...
+      - printf '[{"name":"rust-server","imageUri":"%s"}]' $REPOSITORY_URI:latest > imagedefinitions.json
 
-# artifacts:
-#   files: imagedefinitions.json
-
-cache:
-  paths:
-    - $HOME/.cargo/registry/**/*
+artifacts:
+  files: imagedefinitions.json

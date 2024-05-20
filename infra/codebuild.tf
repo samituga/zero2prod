@@ -8,7 +8,7 @@ resource "aws_codebuild_project" "rust_server_build" {
 
   cache {
     type  = "LOCAL"
-    modes = ["LOCAL_CUSTOM_CACHE", "LOCAL_DOCKER_LAYER_CACHE"]
+    modes = ["LOCAL_DOCKER_LAYER_CACHE"]
   }
 
   environment {
