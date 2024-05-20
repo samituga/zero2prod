@@ -1,6 +1,8 @@
 FROM lukemathwalker/cargo-chef:latest-rust-1.78.0 as chef
 WORKDIR /app
-RUN apt update && apt install lld clang -y
+RUN apt update && apt install lld clang -y \
+  && rustup install nightly \
+  && rustup default nightly
 
 FROM chef as planner
 COPY . .

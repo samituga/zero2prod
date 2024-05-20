@@ -2,7 +2,9 @@ ARG CARGO_CHEF_IMAGE
 
 FROM ${CARGO_CHEF_IMAGE} as chef
 WORKDIR /app
-RUN apt update && apt install lld clang -y
+RUN apt update && apt install lld clang -y \
+  && rustup install nightly \
+  && rustup default nightly
 
 FROM chef as planner
 COPY . .
