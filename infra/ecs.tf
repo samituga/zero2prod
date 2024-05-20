@@ -65,6 +65,29 @@ resource "aws_ecs_task_definition" "rust_server" {
           awslogs-stream-prefix = "ecs"
         }
       }
+
+      environment = [
+        {
+          name  = "APP_DATABASE__USERNAME"
+          value = aws_db_instance.postgres.username
+        },
+        {
+          name  = "APP_DATABASE__PASSWORD"
+          value = aws_db_instance.postgres.password
+        },
+        {
+          name  = "APP_DATABASE__HOST"
+          value = aws_db_instance.postgres.address
+        },
+        {
+          name  = "APP_DATABASE__PORT"
+          value = tostring(aws_db_instance.postgres.port)
+        },
+        {
+          name  = "APP_DATABASE__DATABASE_NAME"
+          value = aws_db_instance.postgres.db_name
+        },
+      ]
     }
   ])
 }
