@@ -76,4 +76,7 @@ Every job keeps downloading and compiling the rust dependencies, check if rust c
 Consider running everything in a single job
 
 TODO Infra
+Just by adding a new dependency the cache does not work as expected, it downloads and compiles all dependencies
+Configure AWS CodeDeploy
+Configure AWS secret manager for secret env vars like DB password
 Use HCP vault for secrets
