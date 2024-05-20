@@ -1,5 +1,5 @@
 resource "aws_ecr_repository" "rust_server" {
-  name = var.api_image_repo_name
+  name = var.image_repo_name
 
   image_scanning_configuration {
     scan_on_push = true

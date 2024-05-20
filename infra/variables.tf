@@ -13,8 +13,8 @@ variable "ecs_service_name" {
   default     = "rust-server-service"
 }
 
-variable "api_image_repo_name" {
-  description = "API image repository name"
+variable "image_repo_name" {
+  description = "image repository name"
   type        = string
   default = "rust-server"
 }

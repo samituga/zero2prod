@@ -1,8 +1,14 @@
 resource "aws_codebuild_project" "rust_server_build" {
   name         = "rust-server-build"
   service_role = aws_iam_role.codebuild.arn
+
   artifacts {
     type = "CODEPIPELINE"
+  }
+
+  cache {
+    type  = "LOCAL"
+    modes = ["LOCAL_CUSTOM_CACHE", "LOCAL_DOCKER_LAYER_CACHE"]
   }
 
   environment {
@@ -18,8 +24,8 @@ resource "aws_codebuild_project" "rust_server_build" {
     }
 
     environment_variable {
-      name  = "API_IMAGE_REPO_NAME"
-      value = var.api_image_repo_name
+      name  = "IMAGE_REPO_NAME"
+      value = var.image_repo_name
     }
   }
 
