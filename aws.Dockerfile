@@ -4,7 +4,6 @@ FROM ${CARGO_CHEF_IMAGE} as chef
 WORKDIR /app
 RUN apt update && apt install lld clang -y \
   && rustup install nightly \
-  && rustup default nightly
 
 FROM chef as planner
 COPY . .
@@ -12,13 +11,12 @@ RUN cargo chef prepare --recipe-path recipe.json
 
 FROM chef as depbuilder
 COPY --from=planner /app/recipe.json recipe.json
-RUN cargo chef cook --release --recipe-path recipe.json
+RUN cargo +nightly chef cook --release --recipe-path recipe.json
 
 FROM depbuilder as builder
 COPY . .
 ENV SQLX_OFFLINE true
-RUN rustup default nightly
-RUN cargo build --release --bin zero2prod
+RUN cargo +nightly build --release --bin zero2prod
 
 FROM public.ecr.aws/debian/debian:bookworm-slim AS runtime
 WORKDIR /app
