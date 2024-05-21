@@ -131,8 +131,31 @@ resource "aws_ecs_service" "rust_server" {
   }
 
   deployment_controller {
-    type = "ECS"
+    type = "CODE_DEPLOY"
   }
 
   depends_on = [aws_lb_listener.http]
+}
+
+resource "aws_iam_policy" "ecs_pass_role_policy" {
+  name        = "ECSPassRolePolicy"
+  description = "Policy to allow passing roles to ECS tasks"
+  policy      = jsonencode({
+    Version   = "2012-10-17",
+    Statement = [
+      {
+        Effect   = "Allow",
+        Action   = "iam:PassRole",
+        Resource = [
+          aws_iam_role.ecs_task_execution_new.arn,
+          aws_iam_role.ssm_session_role.arn
+        ]
+      }
+    ]
+  })
+}
+
+resource "aws_iam_user_policy_attachment" "attach_passrole_policy" {
+  user       = var.aws_user_name
+  policy_arn = aws_iam_policy.ecs_pass_role_policy.arn
 }

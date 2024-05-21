@@ -44,7 +44,6 @@ resource "aws_iam_role" "codepipeline" {
   }
 }
 
-
 resource "aws_iam_role_policy_attachment" "codepipeline" {
   role       = aws_iam_role.codepipeline.name
   policy_arn = "arn:aws:iam::aws:policy/AWSCodePipeline_FullAccess"
@@ -68,6 +67,11 @@ resource "aws_iam_role_policy_attachment" "codepipeline_ecs_access" {
 resource "aws_iam_role_policy_attachment" "codepipeline_codestar_access" {
   role       = aws_iam_role.codepipeline.name
   policy_arn = "arn:aws:iam::aws:policy/AWSCodeStarFullAccess"
+}
+
+resource "aws_iam_role_policy_attachment" "codepipeline_codedeploy_access" {
+  role       = aws_iam_role.codepipeline.name
+  policy_arn = "arn:aws:iam::aws:policy/AWSCodeDeployFullAccess"
 }
 
 resource "aws_codepipeline" "rust_server_pipeline" {
@@ -118,13 +122,12 @@ resource "aws_codepipeline" "rust_server_pipeline" {
       name            = "Deploy"
       category        = "Deploy"
       owner           = "AWS"
-      provider        = "ECS"
+      provider        = "CodeDeploy"
       version         = "1"
       input_artifacts = ["build_output"]
       configuration = {
-        ClusterName = aws_ecs_cluster.main.name
-        ServiceName = aws_ecs_service.rust_server.name
-        FileName    = "imagedefinitions.json"
+        ApplicationName     = aws_codedeploy_app.ecs_app.name
+        DeploymentGroupName = aws_codedeploy_deployment_group.ecs_deployment_group.deployment_group_name
       }
     }
   }

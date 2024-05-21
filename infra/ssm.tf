@@ -2,11 +2,11 @@ resource "aws_iam_policy" "assume_ssm_role_policy" {
   name        = "AssumeSSMSessionRolePolicy"
   description = "Policy to allow assuming the SSM session role"
   policy      = jsonencode({
-    Version = "2012-10-17",
+    Version   = "2012-10-17",
     Statement = [
       {
-        Effect = "Allow",
-        Action = "sts:AssumeRole",
+        Effect   = "Allow",
+        Action   = "sts:AssumeRole",
         Resource = aws_iam_role.ssm_session_role.arn
       }
     ]
@@ -22,7 +22,7 @@ resource "aws_iam_role" "ssm_session_role" {
   name = "SSMSessionRole"
 
   assume_role_policy = jsonencode({
-    Version = "2012-10-17",
+    Version   = "2012-10-17",
     Statement = [
       {
         Effect = "Allow",
@@ -39,7 +39,7 @@ resource "aws_iam_policy" "ssm_session_policy" {
   name        = "SSMSessionPolicy"
   description = "Policy to allow starting SSM sessions"
   policy      = jsonencode({
-    Version = "2012-10-17",
+    Version   = "2012-10-17",
     Statement = [
       {
         Effect = "Allow",
