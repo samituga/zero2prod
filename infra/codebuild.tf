@@ -27,6 +27,11 @@ resource "aws_codebuild_project" "rust_server_build" {
       name  = "IMAGE_REPO_NAME"
       value = var.image_repo_name
     }
+
+    environment_variable {
+      name  = "TASK_DEFINITION_ARN"
+      value = aws_ecs_task_definition.rust_server.arn
+    }
   }
 
   source {

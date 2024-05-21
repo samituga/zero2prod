@@ -57,6 +57,10 @@ phases:
       - docker push $REPOSITORY_URI:depbuilder
       - echo Writing image definitions file...
       - printf '[{"name":"rust-server","imageUri":"%s"}]' $REPOSITORY_URI:latest > imagedefinitions.json
+      - echo Generating AppSpec file...
+      - ./scripts/generate_appspec.sh
 
 artifacts:
-  files: imagedefinitions.json
+  files:
+    - imagedefinitions.json
+    - appspec.yaml

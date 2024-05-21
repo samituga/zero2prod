@@ -72,11 +72,6 @@ output "ssm_session_role_arn" {
   value       = aws_iam_role.ssm_session_role.arn
 }
 
-output "ecs_task_arns" {
-  description = "The ARNs of the ECS tasks"
-  value       = aws_ecs_task_definition.rust_server.arn
-}
-
 output "ecs_task_role_arn" {
   description = "The ARN of the ECS task role"
   value       = aws_iam_role.app_task_role.arn
