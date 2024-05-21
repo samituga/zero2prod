@@ -79,10 +79,5 @@ output "ecs_task_arns" {
 
 output "ecs_task_role_arn" {
   description = "The ARN of the ECS task role"
-  value       = aws_iam_role.ecs_task_execution_new.arn
-}
-
-output "sns_topic_arn" {
-  description = "The ARN of the SNS topic for CodeDeploy notifications"
-  value       = aws_sns_topic.codedeploy_notifications.arn
+  value       = aws_iam_role.app_task_role.arn
 }

@@ -28,7 +28,7 @@ resource "aws_codedeploy_deployment_group" "ecs_deployment_group" {
   blue_green_deployment_config {
     terminate_blue_instances_on_deployment_success {
       action                           = "TERMINATE"
-      termination_wait_time_in_minutes = 5
+      termination_wait_time_in_minutes = 1
     }
 
     deployment_ready_option {
@@ -40,28 +40,18 @@ resource "aws_codedeploy_deployment_group" "ecs_deployment_group" {
   load_balancer_info {
     target_group_pair_info {
       prod_traffic_route {
-        listener_arns = [aws_lb_listener.http.arn]
+        listener_arns = [aws_lb_listener.l_80.arn]
       }
 
       target_group {
-        name = aws_lb_target_group.blue.name
+        name = aws_lb_target_group.tg[0].name
       }
 
       target_group {
-        name = aws_lb_target_group.green.name
+        name = aws_lb_target_group.tg[1].name
       }
     }
   }
-
-  trigger_configuration {
-    trigger_events     = ["DeploymentSuccess", "DeploymentFailure"]
-    trigger_name       = "deployment-trigger"
-    trigger_target_arn = aws_sns_topic.codedeploy_notifications.arn
-  }
-}
-
-resource "aws_sns_topic" "codedeploy_notifications" {
-  name = "codedeploy-notifications"
 }
 
 resource "aws_iam_role" "codedeploy" {

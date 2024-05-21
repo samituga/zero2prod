@@ -2,8 +2,8 @@ resource "aws_ecs_cluster" "main" {
   name = var.ecs_cluster_name
 }
 
-resource "aws_iam_role" "ecs_task_execution_new" {
-  name = "ecsTaskExecutionRoleNew"
+resource "aws_iam_role" "app_task_role" {
+  name = "app-task-role"
 
   assume_role_policy = jsonencode({
     Version   = "2012-10-17"
@@ -20,12 +20,12 @@ resource "aws_iam_role" "ecs_task_execution_new" {
 }
 
 resource "aws_iam_role_policy_attachment" "ecs_task_execution" {
-  role       = aws_iam_role.ecs_task_execution_new.name
+  role       = aws_iam_role.app_task_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
 resource "aws_iam_role_policy_attachment" "ecs_task_execution_ecr" {
-  role       = aws_iam_role.ecs_task_execution_new.name
+  role       = aws_iam_role.app_task_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
 }
 
@@ -44,7 +44,7 @@ resource "aws_ecs_task_definition" "rust_server" {
   requires_compatibilities = ["FARGATE"]
   cpu                      = "256"
   memory                   = "512"
-  execution_role_arn       = aws_iam_role.ecs_task_execution_new.arn
+  execution_role_arn       = aws_iam_role.app_task_role.arn
   task_role_arn            = aws_iam_role.ssm_session_role.arn
   container_definitions    = jsonencode([
     {
@@ -119,7 +119,7 @@ resource "aws_ecs_service" "rust_server" {
   desired_count   = 1
 
   load_balancer {
-    target_group_arn = aws_lb_target_group.ecs.arn
+    target_group_arn = aws_lb_target_group.tg[0].arn
     container_name   = "rust-server"
     container_port   = 8080
   }
@@ -134,7 +134,11 @@ resource "aws_ecs_service" "rust_server" {
     type = "CODE_DEPLOY"
   }
 
-  depends_on = [aws_lb_listener.http]
+  depends_on = [aws_lb_listener.l_80, aws_ecs_cluster.main]
+
+  lifecycle {
+    ignore_changes = [task_definition, desired_count, load_balancer]
+  }
 }
 
 resource "aws_iam_policy" "ecs_pass_role_policy" {
@@ -147,7 +151,7 @@ resource "aws_iam_policy" "ecs_pass_role_policy" {
         Effect   = "Allow",
         Action   = "iam:PassRole",
         Resource = [
-          aws_iam_role.ecs_task_execution_new.arn,
+          aws_iam_role.app_task_role.arn,
           aws_iam_role.ssm_session_role.arn
         ]
       }
