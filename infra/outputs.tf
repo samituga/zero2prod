@@ -7,6 +7,16 @@ output "ecs_cluster_id" {
   value       = aws_ecs_cluster.main.id
 }
 
+output "ecs_cluster_name" {
+  description = "The name of the ECS cluster"
+  value       = aws_ecs_cluster.main.name
+}
+
+output "ecs_task_definition_id" {
+  description = "The ID of the ECS task definition"
+  value       = aws_ecs_task_definition.rust_server.id
+}
+
 output "ecs_task_definition_arn" {
   description = "The ARN of the ECS task definition"
   value       = aws_ecs_task_definition.rust_server.arn
@@ -15,6 +25,11 @@ output "ecs_task_definition_arn" {
 output "ecs_service_name" {
   description = "The name of the ECS service"
   value       = aws_ecs_service.rust_server.name
+}
+
+output "ecs_service_arn" {
+  description = "The ID of the ECS service"
+  value       = aws_ecs_service.rust_server.id
 }
 
 output "cloudwatch_log_group_name" {
@@ -40,4 +55,29 @@ output "rds_port" {
 output "rds_username" {
   description = "The username for the RDS instance"
   value       = aws_db_instance.postgres.username
+}
+
+output "vpc_id" {
+  description = "The ID of the VPC"
+  value       = aws_vpc.main.id
+}
+
+output "subnet_ids" {
+  description = "The IDs of the subnets"
+  value       = aws_subnet.public[*].id
+}
+
+output "ssm_session_role_arn" {
+  description = "The ARN of the SSM session role"
+  value       = aws_iam_role.ssm_session_role.arn
+}
+
+output "ecs_task_arns" {
+  description = "The ARNs of the ECS tasks"
+  value       = aws_ecs_task_definition.rust_server.arn
+}
+
+output "ecs_task_role_arn" {
+  description = "The ARN of the ECS task role"
+  value       = aws_iam_role.ecs_task_execution_new.arn
 }

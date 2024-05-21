@@ -1,3 +1,13 @@
+variable "aws_account_id" {
+  description = "The AWS account ID"
+  type        = string
+}
+
+variable "aws_user_name" {
+  description = "The IAM user name to allow assume role"
+  type        = string
+}
+
 variable "aws_region" {
   description = "The AWS region to deploy the infrastructure"
   default     = "eu-west-1"

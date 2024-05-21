@@ -70,6 +70,9 @@ Build docker image
 docker build --tag zero2pod --file Dockerfile .
 ```
 
+INFRA, after applying the terraform config, it's necessary to manually update the codestar connection to GitHub
+under Developer Tools > Connections
+
 TODO GitHub workflows
 Docker caching doesn't appear to be working
 Every job keeps downloading and compiling the rust dependencies, check if rust cache is working
