@@ -3,7 +3,6 @@ import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
 import { Zero2ProdStack } from '../lib/zero_2_prod-stack';
 import {VpcStack} from "../lib/vpc-stack";
-import {SsmStack} from "../lib/ssm-stack";
 
 const app = new cdk.App();
 new Zero2ProdStack(app, 'Zero2ProdStack', {
@@ -22,4 +21,3 @@ new Zero2ProdStack(app, 'Zero2ProdStack', {
   /* For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html */
 });
 const vpcStack = new VpcStack(app, 'VpcStack');
-const ssmStack = new SsmStack(app, 'SsmStack');

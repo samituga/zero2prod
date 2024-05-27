@@ -14,10 +14,10 @@ interface CodeDeployStackProps extends cdk.StackProps {
     ecsCluster: Cluster;
     vpc: Vpc;
     alb: ApplicationLoadBalancer;
-    prodListener: ApplicationListener;
-    testListener: ApplicationListener;
-    blueTargetGroup: ApplicationTargetGroup;
-    greenTargetGroup: ApplicationTargetGroup;
+    listenerBlue: ApplicationListener;
+    listenerGreen: ApplicationListener;
+    targetGroupBlue: ApplicationTargetGroup;
+    targetGroupGreen: ApplicationTargetGroup;
 }
 
 export class CodeDeployStack extends cdk.Stack {
@@ -33,10 +33,10 @@ export class CodeDeployStack extends cdk.Stack {
             service: props.ecsService,
             deploymentConfig: EcsDeploymentConfig.ALL_AT_ONCE,
             blueGreenDeploymentConfig: {
-                listener: props.prodListener,
-                testListener: props.testListener,
-                blueTargetGroup: props.blueTargetGroup,
-                greenTargetGroup: props.greenTargetGroup,
+                listener: props.listenerBlue,
+                testListener: props.listenerGreen,
+                blueTargetGroup: props.targetGroupBlue,
+                greenTargetGroup: props.targetGroupGreen,
             },
             autoRollback: {
                 failedDeployment: true,

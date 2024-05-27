@@ -1,0 +1,66 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - export DOCKER_BUILDKIT=1
+      - echo Logging in to Amazon ECR...
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $REPOSITORY_URI
+      - |
+        if ! aws ecr describe-images --repository-name $IMAGE_REPO_NAME --image-ids imageTag=latest-rust-1.78.0 --region $AWS_DEFAULT_REGION; then
+          echo "Image not found in ECR, pulling from Docker Hub and pushing to ECR..."
+          docker pull lukemathwalker/cargo-chef:latest-rust-1.78.0
+          docker tag lukemathwalker/cargo-chef:latest-rust-1.78.0 $REPOSITORY_URI:latest-rust-1.78.0
+          docker push $REPOSITORY_URI:latest-rust-1.78.0
+        else
+          echo "Image found in ECR."
+        fi
+      - docker pull $REPOSITORY_URI:depbuilder || echo "No existing image found, proceeding without cache"
+      - docker pull $REPOSITORY_URI:latest || echo "No existing image found, proceeding without cache"
+
+  build:
+    commands:
+      - echo Building dependencies image...
+      - |
+        docker build \
+        --progress=plain \
+        --target depbuilder \
+        --cache-from $REPOSITORY_URI:depbuilder \
+        --build-arg CARGO_CHEF_IMAGE=$REPOSITORY_URI:latest-rust-1.78.0 \
+        --build-arg BUILDKIT_INLINE_CACHE=1 \
+        --tag $IMAGE_REPO_NAME:depbuilder \
+        --file aws.Dockerfile .
+      - |
+        docker tag $IMAGE_REPO_NAME:depbuilder \
+        $REPOSITORY_URI:depbuilder
+
+      - echo Building Docker image...
+      - |
+        docker build \
+        --cache-from $REPOSITORY_URI:depbuilder \
+        --cache-from $REPOSITORY_URI:latest \
+        --build-arg CARGO_CHEF_IMAGE=$REPOSITORY_URI:latest-rust-1.78.0 \
+        --build-arg BUILDKIT_INLINE_CACHE=1 \
+        --progress=plain \
+        --tag $IMAGE_REPO_NAME:latest \
+        --file aws.Dockerfile .
+      - |
+        docker tag \
+        $IMAGE_REPO_NAME:latest \
+        $REPOSITORY_URI:latest
+
+  post_build:
+    commands:
+      - echo Done...
+      - echo Pushing the Docker image...
+      - docker push $REPOSITORY_URI:latest
+      - docker push $REPOSITORY_URI:depbuilder
+      - echo Writing image definitions file...
+      - printf '[{"name":"rust-server","imageUri":"%s"}]' $REPOSITORY_URI:latest > imagedefinitions.json
+      - echo Generating AppSpec file...
+      - ./scripts/generate_appspec.sh
+
+artifacts:
+  files:
+    - imagedefinitions.json
+    - appspec.yaml
