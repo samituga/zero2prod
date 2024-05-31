@@ -54,9 +54,6 @@ export class EcsStack extends cdk.Stack {
       assignPublicIp: true,
     });
 
-    console.log('\n\n\n\n\ntaskDefinition.toString()\n\n\n\n\n');
-    console.log(taskDefinition.toString());
-
     // Attach the ECS service to the blue target group initially
     this.ecsService.attachToApplicationTargetGroup(props.blueTargetGroup);
   }
