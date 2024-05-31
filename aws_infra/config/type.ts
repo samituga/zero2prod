@@ -27,6 +27,12 @@ export interface HealthCheckConfig {
   healthyHttpCodes: string;
 }
 
+export interface RdsConfig {
+  allocatedStorage: number,
+  maxAllocatedStorage: number,
+  instanceType: string
+}
+
 export interface EcsConfig {
   desiredCount: number;
   taskDefConfig: TaskDefConfig;

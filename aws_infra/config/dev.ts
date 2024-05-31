@@ -1,4 +1,4 @@
-import { CertificateConfig, Config, EcsConfig, AlbConfig, VpcConfig } from './type';
+import { CertificateConfig, Config, EcsConfig, AlbConfig, VpcConfig, RdsConfig } from './type';
 
 const vpc: VpcConfig = {
   maxAzs: 2,
@@ -19,6 +19,12 @@ const alb: AlbConfig = {
     healthyHttpCodes: '200',
   },
 };
+
+const rds: RdsConfig = {
+  allocatedStorage: 20,
+  maxAllocatedStorage: 40,
+  instanceType: 't3.micro'
+}
 
 const ecs: EcsConfig = {
   desiredCount: 1,
