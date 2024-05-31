@@ -1,32 +1,32 @@
 import * as cdk from 'aws-cdk-lib';
-import { Vpc } from 'aws-cdk-lib/aws-ec2';
-import { Repository } from 'aws-cdk-lib/aws-ecr';
-import { Cluster, ContainerImage, FargateService, FargateTaskDefinition, Protocol } from 'aws-cdk-lib/aws-ecs';
+import * as ec2 from 'aws-cdk-lib/aws-ec2';
+import * as ecr from 'aws-cdk-lib/aws-ecr';
+import * as ecs from 'aws-cdk-lib/aws-ecs';
 import { DeploymentControllerType } from 'aws-cdk-lib/aws-ecs/lib/base/base-service';
 import { ApplicationTargetGroup } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import { Construct } from 'constructs';
 
 interface EcsStackProps extends cdk.StackProps {
-  vpc: Vpc;
-  repository: Repository;
+  vpc: ec2.Vpc;
+  repository: ecr.Repository;
   blueTargetGroup: ApplicationTargetGroup;
   greenTargetGroup: ApplicationTargetGroup;
 }
 
 export class EcsStack extends cdk.Stack {
-  public readonly ecsCluster: Cluster;
-  public readonly ecsService: FargateService;
+  public readonly ecsCluster: ecs.Cluster;
+  public readonly ecsService: ecs.FargateService;
 
   constructor(scope: Construct, id: string, props: EcsStackProps) {
     super(scope, id, props);
 
-    this.ecsCluster = new Cluster(this, 'MyEcsCluster', {
+    this.ecsCluster = new ecs.Cluster(this, 'MyEcsCluster', {
       vpc: props.vpc,
     });
 
-    const taskDefinition = new FargateTaskDefinition(this, 'MyTaskDef');
+    const taskDefinition = new ecs.FargateTaskDefinition(this, 'MyTaskDef');
     taskDefinition.addContainer('MyContainer', {
-      image: ContainerImage.fromEcrRepository(props.repository, 'latest'),
+      image: ecs.ContainerImage.fromEcrRepository(props.repository, 'latest'),
       essential: true,
       memoryLimitMiB: 512,
       cpu: 256,
@@ -34,7 +34,7 @@ export class EcsStack extends cdk.Stack {
         {
           containerPort: 8080,
           hostPort: 8080,
-          protocol: Protocol.TCP,
+          protocol: ecs.Protocol.TCP,
         },
       ],
       environment: {
@@ -46,7 +46,7 @@ export class EcsStack extends cdk.Stack {
       },
     });
 
-    this.ecsService = new FargateService(this, 'MyFargateService', {
+    this.ecsService = new ecs.FargateService(this, 'MyFargateService', {
       cluster: this.ecsCluster,
       desiredCount: 2,
       deploymentController: { type: DeploymentControllerType.CODE_DEPLOY },

@@ -1,5 +1,5 @@
 import * as cdk from 'aws-cdk-lib';
-import { CfnConnection } from 'aws-cdk-lib/aws-codestarconnections';
+import * as codestarconnections from 'aws-cdk-lib/aws-codestarconnections';
 import { Construct } from 'constructs';
 
 export class CodeStarStack extends cdk.Stack {
@@ -8,7 +8,7 @@ export class CodeStarStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    const connection = new CfnConnection(this, 'GitHubConnection', {
+    const connection = new codestarconnections.CfnConnection(this, 'GitHubConnection', {
       connectionName: 'MyGitHubConnection',
       providerType: 'GitHub',
     });

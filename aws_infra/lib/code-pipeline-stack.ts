@@ -1,15 +1,15 @@
 import * as cdk from 'aws-cdk-lib';
-import { EcsDeploymentGroup } from 'aws-cdk-lib/aws-codedeploy';
-import { Artifact, Pipeline } from 'aws-cdk-lib/aws-codepipeline';
-import { CodeBuildAction, CodeDeployEcsDeployAction, CodeStarConnectionsSourceAction } from 'aws-cdk-lib/aws-codepipeline-actions';
-import { Repository } from 'aws-cdk-lib/aws-ecr';
-import { FargateService } from 'aws-cdk-lib/aws-ecs';
+import * as codedeploy from 'aws-cdk-lib/aws-codedeploy';
+import * as pipeline from 'aws-cdk-lib/aws-codepipeline';
+import * as pipelineactions from 'aws-cdk-lib/aws-codepipeline-actions';
+import * as ecr from 'aws-cdk-lib/aws-ecr';
+import * as ecs from 'aws-cdk-lib/aws-ecs';
 import { Construct } from 'constructs';
 
 interface PipelineStackProps extends cdk.StackProps {
-  fargateService: FargateService;
-  deploymentGroup: EcsDeploymentGroup;
-  repository: Repository;
+  fargateService: ecs.FargateService;
+  deploymentGroup: codedeploy.EcsDeploymentGroup;
+  repository: ecr.Repository;
   connectionArn: string;
 }
 
@@ -17,16 +17,16 @@ export class PipelineStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: PipelineStackProps) {
     super(scope, id, props);
 
-    const sourceOutput = new Artifact();
-    const buildOutput = new Artifact();
+    const sourceOutput = new pipeline.Artifact();
+    const buildOutput = new pipeline.Artifact();
 
-    const pipeline = new Pipeline(this, 'Pipeline', {
+    const codePipeline = new pipeline.Pipeline(this, 'Pipeline', {
       pipelineName: 'MyPipeline',
       stages: [
         {
           stageName: 'Source',
           actions: [
-            new CodeStarConnectionsSourceAction({
+            new pipelineactions.CodeStarConnectionsSourceAction({
               actionName: 'CodeStarSource',
               owner: 'your-github-username',
               repo: 'your-repo-name',
@@ -40,7 +40,7 @@ export class PipelineStack extends cdk.Stack {
           // TODO code-build-stack.ts
           stageName: 'Build',
           actions: [
-            new CodeBuildAction({
+            new pipelineactions.CodeBuildAction({
               actionName: 'Build',
               project: new cdk.aws_codebuild.PipelineProject(this, 'CodeBuildProject', {
                 environment: {
@@ -57,7 +57,7 @@ export class PipelineStack extends cdk.Stack {
         {
           stageName: 'Deploy',
           actions: [
-            new CodeDeployEcsDeployAction({
+            new pipelineactions.CodeDeployEcsDeployAction({
               actionName: 'ECS_Deploy',
               deploymentGroup: props.deploymentGroup,
               appSpecTemplateFile: buildOutput.atPath('appspec.yaml'),
@@ -70,7 +70,7 @@ export class PipelineStack extends cdk.Stack {
     });
 
     new cdk.CfnOutput(this, 'PipelineName', {
-      value: pipeline.pipelineName,
+      value: codePipeline.pipelineName,
     });
   }
 }
