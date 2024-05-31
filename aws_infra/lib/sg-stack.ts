@@ -28,7 +28,7 @@ export class SgStack extends cdk.Stack {
       vpc,
     });
 
-    this.rds = new ec2.SecurityGroup(this, 'RedisSecurityGroup', {
+    this.rds = new ec2.SecurityGroup(this, 'RdsSecurityGroup', {
       vpc,
       allowAllOutbound: false,
     });

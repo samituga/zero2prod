@@ -39,7 +39,7 @@ export class CodeDeployStack extends cdk.Stack {
       },
     });
 
-    new cdk.CfnOutput(this, 'LoadBalancerDNS', {
+    new cdk.CfnOutput(this, 'LoadBalancerDns', {
       value: alb.loadBalancerDnsName,
     });
   }

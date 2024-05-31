@@ -15,7 +15,7 @@ export class VpcStack extends cdk.Stack {
 
     const { config } = props;
 
-    this.vpc = new ec2.Vpc(this, 'Zero2ProdVPC', {
+    this.vpc = new ec2.Vpc(this, 'Vpc', {
       maxAzs: config.maxAzs,
       subnetConfiguration: [
         {

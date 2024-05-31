@@ -59,7 +59,7 @@ export class PipelineStack extends cdk.Stack {
           stageName: 'Deploy',
           actions: [
             new pipelineactions.CodeDeployEcsDeployAction({
-              actionName: 'ECS_Deploy',
+              actionName: 'EcsDeploy',
               deploymentGroup: deploymentGroup,
               appSpecTemplateFile: buildOutput.atPath('appspec.yaml'),
               taskDefinitionTemplateFile: buildOutput.atPath('taskdef.json'), //TODO generate this file from FargateTaskDefinition toString

@@ -9,7 +9,7 @@ export class CodeStarStack extends cdk.Stack {
     super(scope, id, props);
 
     const connection = new codestarconnections.CfnConnection(this, 'GitHubConnection', {
-      connectionName: 'MyGitHubConnection',
+      connectionName: 'GitHubConnection',
       providerType: 'GitHub',
     });
 

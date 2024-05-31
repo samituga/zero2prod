@@ -24,14 +24,14 @@ export class EcsStack extends cdk.Stack {
 
     const { config, vpc, repository, blueTargetGroup, greenTargetGroup } = props;
 
-    this.ecsCluster = new ecs.Cluster(this, 'MyEcsCluster', {
+    this.ecsCluster = new ecs.Cluster(this, 'EcsCluster', {
       vpc: vpc,
     });
 
     const taskDefConfig = config.taskDefConfig;
 
-    const taskDefinition = new ecs.FargateTaskDefinition(this, 'MyTaskDef');
-    taskDefinition.addContainer('MyContainer', {
+    const taskDefinition = new ecs.FargateTaskDefinition(this, 'TaskDef');
+    taskDefinition.addContainer('TaskContainer', {
       image: ecs.ContainerImage.fromEcrRepository(repository, 'latest'),
       essential: true,
       memoryLimitMiB: taskDefConfig.memoryLimitMiB,
@@ -52,7 +52,7 @@ export class EcsStack extends cdk.Stack {
       },
     });
 
-    this.ecsService = new ecs.FargateService(this, 'MyFargateService', {
+    this.ecsService = new ecs.FargateService(this, 'FargateService', {
       cluster: this.ecsCluster,
       desiredCount: config.desiredCount,
       deploymentController: { type: DeploymentControllerType.CODE_DEPLOY },

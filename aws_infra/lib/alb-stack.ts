@@ -21,7 +21,7 @@ export class AlbStack extends cdk.Stack {
 
     const { config, ecsConfig, vpc } = props;
 
-    this.alb = new elb.ApplicationLoadBalancer(this, 'LB', {
+    this.alb = new elb.ApplicationLoadBalancer(this, 'Alb', {
       vpc,
       internetFacing: true,
     });
