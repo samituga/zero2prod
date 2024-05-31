@@ -10,8 +10,7 @@ interface CodeDeployStackProps extends cdk.StackProps {
   ecsCluster: ecs.Cluster;
   vpc: ec2.Vpc;
   alb: elb.ApplicationLoadBalancer;
-  listenerBlue: elb.ApplicationListener;
-  listenerGreen: elb.ApplicationListener;
+  albListener: elb.ApplicationListener;
   targetGroupBlue: elb.ApplicationTargetGroup;
   targetGroupGreen: elb.ApplicationTargetGroup;
 }
@@ -22,7 +21,7 @@ export class CodeDeployStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: CodeDeployStackProps) {
     super(scope, id, props);
 
-    const { ecsService, ecsCluster, vpc, alb, listenerBlue, listenerGreen, targetGroupBlue, targetGroupGreen } = props;
+    const { ecsService, ecsCluster, vpc, alb, albListener, targetGroupBlue, targetGroupGreen } = props;
 
     const application = new codedeploy.EcsApplication(this, 'EcsApplication');
 
@@ -31,8 +30,7 @@ export class CodeDeployStack extends cdk.Stack {
       service: ecsService,
       deploymentConfig: codedeploy.EcsDeploymentConfig.ALL_AT_ONCE,
       blueGreenDeploymentConfig: {
-        listener: listenerBlue,
-        testListener: listenerGreen,
+        listener: albListener,
         blueTargetGroup: targetGroupBlue,
         greenTargetGroup: targetGroupGreen,
       },
