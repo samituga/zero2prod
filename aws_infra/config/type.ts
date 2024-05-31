@@ -1,7 +1,10 @@
+export type Scope = 'prod' | 'dev';
+
 export interface Config {
   vpc: VpcConfig;
   certificate: CertificateConfig;
   alb: AlbConfig;
+  rds: RdsConfig;
   ecs: EcsConfig;
 }
 

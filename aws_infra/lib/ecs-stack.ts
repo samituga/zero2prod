@@ -9,11 +9,10 @@ import { EcsConfig } from '../config/type';
 
 interface EcsStackProps extends cdk.StackProps {
   config: EcsConfig;
+  repository: ecr.Repository;
+  targetGroupBlue: ApplicationTargetGroup;
   vpc: ec2.Vpc;
   sg: ec2.SecurityGroup;
-  repository: ecr.Repository;
-  blueTargetGroup: ApplicationTargetGroup;
-  greenTargetGroup: ApplicationTargetGroup;
 }
 
 export class EcsStack extends cdk.Stack {
@@ -23,7 +22,7 @@ export class EcsStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: EcsStackProps) {
     super(scope, id, props);
 
-    const { config, vpc, sg, repository, blueTargetGroup, greenTargetGroup } = props;
+    const { config, vpc, sg, repository, targetGroupBlue } = props;
 
     this.ecsCluster = new ecs.Cluster(this, 'EcsCluster', {
       vpc: vpc,
@@ -63,6 +62,6 @@ export class EcsStack extends cdk.Stack {
     });
 
     // Attach the ECS service to the blue target group initially
-    this.ecsService.attachToApplicationTargetGroup(blueTargetGroup);
+    this.ecsService.attachToApplicationTargetGroup(targetGroupBlue);
   }
 }

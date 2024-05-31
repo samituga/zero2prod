@@ -1,23 +1,69 @@
 #!/usr/bin/env node
 import * as cdk from 'aws-cdk-lib';
 import 'source-map-support/register';
+import { getConfig, isScope, stackId } from '../config/helper';
+import { Scope } from '../config/type';
+import { AlbStack } from '../lib/alb-stack';
+import { EcrStack } from '../lib/ecr-stack';
+import { EcsStack } from '../lib/ecs-stack';
+import { RdsStack } from '../lib/rds-stack';
+import { SgStack } from '../lib/sg-stack';
 import { VpcStack } from '../lib/vpc-stack';
-import { Zero2ProdStack } from '../lib/zero_2_prod-stack';
+
+const envScope = process.env.CDK_DEPLOY_SCOPE;
+
+if (envScope && !isScope(envScope)) {
+  throw new Error(`Scope from environment ${envScope} is not valid`);
+}
+
+const scope: Scope = envScope && isScope(envScope) ? envScope : 'dev';
+
+const env = {
+  account: process.env.CDK_DEPLOY_ACCOUNT || process.env.CDK_DEFAULT_ACCOUNT,
+  region: process.env.CDK_DEPLOY_REGION || process.env.CDK_DEFAULT_REGION,
+};
+
+const config = getConfig(scope);
 
 const app = new cdk.App();
-new Zero2ProdStack(app, 'Zero2ProdStack', {
-  /* If you don't specify 'env', this stack will be environment-agnostic.
-   * Account/Region-dependent features and context lookups will not work,
-   * but a single synthesized template can be deployed anywhere. */
 
-  /* Uncomment the next line to specialize this stack for the AWS Account
-   * and Region that are implied by the current CLI configuration. */
-  env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
-
-  /* Uncomment the next line if you know exactly what Account and Region you
-   * want to deploy the stack to. */
-  // env: { account: '123456789012', region: 'us-east-1' },
-
-  /* For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html */
+const ecrStack = new EcrStack(app, stackId(scope, 'EcrStack'), {
+  env,
 });
-const vpcStack = new VpcStack(app, 'VpcStack');
+
+const vpcStack = new VpcStack(app, stackId(scope, 'VpcStack'), {
+  env,
+  config: config.vpc,
+});
+const vpc = vpcStack.vpc;
+
+const sgStack = new SgStack(app, stackId(scope, 'SgStack'), {
+  env,
+  ecsConfig: config.ecs,
+  rdsConfig: config.rds,
+  vpc,
+});
+
+const rdsStack = new RdsStack(app, stackId(scope, 'RdsStack'), {
+  env,
+  config: config.rds,
+  vpc,
+  sg: sgStack.rds,
+});
+
+const albStack = new AlbStack(app, stackId(scope, 'AlbStack'), {
+  env,
+  config: config.alb,
+  ecsConfig: config.ecs,
+  vpc,
+  sg: sgStack.alb,
+});
+
+const ecsStack = new EcsStack(app, stackId(scope, 'EcsStack'), {
+  env,
+  config: config.ecs,
+  repository: ecrStack.repository,
+  targetGroupBlue: albStack.targetGroupBlue,
+  vpc,
+  sg: sgStack.ecs,
+});

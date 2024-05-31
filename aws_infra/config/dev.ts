@@ -42,5 +42,6 @@ export const devConfig: Config = {
   vpc,
   certificate,
   alb,
+  rds,
   ecs,
 };
