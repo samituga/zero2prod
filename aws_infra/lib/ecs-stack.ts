@@ -2,15 +2,14 @@ import * as cdk from 'aws-cdk-lib';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecr from 'aws-cdk-lib/aws-ecr';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
-import { DeploymentControllerType } from 'aws-cdk-lib/aws-ecs/lib/base/base-service';
-import { ApplicationTargetGroup } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
+import * as elb from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import { Construct } from 'constructs';
 import { EcsConfig } from '../config/type';
 
 interface EcsStackProps extends cdk.StackProps {
   config: EcsConfig;
   repository: ecr.Repository;
-  targetGroupBlue: ApplicationTargetGroup;
+  targetGroupBlue: elb.ApplicationTargetGroup;
   vpc: ec2.Vpc;
   sg: ec2.SecurityGroup;
 }
@@ -39,7 +38,6 @@ export class EcsStack extends cdk.Stack {
       portMappings: [
         {
           containerPort: taskDefConfig.containerPort,
-          hostPort: taskDefConfig.hostPort,
           protocol: ecs.Protocol.TCP,
         },
       ],
@@ -55,7 +53,7 @@ export class EcsStack extends cdk.Stack {
     this.ecsService = new ecs.FargateService(this, 'FargateService', {
       cluster: this.ecsCluster,
       desiredCount: config.desiredCount,
-      deploymentController: { type: DeploymentControllerType.CODE_DEPLOY },
+      deploymentController: { type: ecs.DeploymentControllerType.CODE_DEPLOY },
       taskDefinition,
       assignPublicIp: true,
       securityGroups: [sg],

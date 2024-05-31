@@ -1,4 +1,4 @@
-export type Scope = 'prod' | 'dev';
+export type Scope = 'Prod' | 'Dev';
 
 export interface Config {
   vpc: VpcConfig;
@@ -47,5 +47,4 @@ export interface TaskDefConfig {
   memoryLimitMiB: number;
   cpu: number;
   containerPort: number;
-  hostPort: number;
 }

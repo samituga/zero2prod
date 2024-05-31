@@ -1,10 +1,10 @@
 import { devConfig } from './dev';
 import { Config, Scope } from './type';
 
-const configMap = new Map<Scope, Config>([['dev', devConfig]]);
+const configMap = new Map<Scope, Config>([['Dev', devConfig]]);
 
 export function isScope(value: any): value is Scope {
-  return value === 'prod' || value === 'dev';
+  return value === 'Prod' || value === 'Dev';
 }
 
 export function getConfig(scope: Scope): Config {

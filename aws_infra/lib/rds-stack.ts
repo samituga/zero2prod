@@ -1,8 +1,6 @@
 import * as cdk from 'aws-cdk-lib';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
-import { SubnetType } from 'aws-cdk-lib/aws-ec2';
 import * as rds from 'aws-cdk-lib/aws-rds';
-import { SubnetGroup } from 'aws-cdk-lib/aws-rds';
 import { Construct } from 'constructs';
 import { RdsConfig } from '../config/type';
 
@@ -20,9 +18,9 @@ export class RdsStack extends cdk.Stack {
 
     const { config, vpc, sg } = props;
 
-    const subnetGroup = new SubnetGroup(this, 'RdsSubnetGroup', {
+    const subnetGroup = new rds.SubnetGroup(this, 'RdsSubnetGroup', {
       vpc,
-      vpcSubnets: { subnetType: SubnetType.PRIVATE_ISOLATED, subnets: vpc.isolatedSubnets },
+      vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_ISOLATED },
       description: 'Subnet group for the RDS instance',
     });
 

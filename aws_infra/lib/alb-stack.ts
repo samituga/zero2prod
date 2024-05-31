@@ -37,7 +37,7 @@ export class AlbStack extends cdk.Stack {
 
     const targetGroupProps = {
       vpc,
-      port: ecsConfig.taskDefConfig.hostPort,
+      port: ecsConfig.taskDefConfig.containerPort,
       protocol: elb.ApplicationProtocol.HTTP,
       targets: [],
       targetType: elb.TargetType.IP,
@@ -55,8 +55,8 @@ export class AlbStack extends cdk.Stack {
     this.targetGroupBlue = new elb.ApplicationTargetGroup(this, 'BlueTargetGroup', targetGroupProps);
     this.targetGroupGreen = new elb.ApplicationTargetGroup(this, 'GreenTargetGroup', targetGroupProps);
 
-    this.listener80.addTargetGroups('GreenTargetGroup', {
-      targetGroups: [this.targetGroupGreen],
+    this.listener80.addTargetGroups('TargetGroupAttachment', {
+      targetGroups: [this.targetGroupBlue, this.targetGroupGreen],
     });
 
     new cdk.CfnOutput(this, 'LoadBalancerDNS', {

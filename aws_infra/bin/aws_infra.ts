@@ -16,7 +16,7 @@ if (envScope && !isScope(envScope)) {
   throw new Error(`Scope from environment ${envScope} is not valid`);
 }
 
-const scope: Scope = envScope && isScope(envScope) ? envScope : 'dev';
+const scope: Scope = envScope && isScope(envScope) ? envScope : 'Dev';
 
 const env = {
   account: process.env.CDK_DEPLOY_ACCOUNT || process.env.CDK_DEFAULT_ACCOUNT,

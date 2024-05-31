@@ -34,7 +34,6 @@ const ecs: EcsConfig = {
     memoryLimitMiB: 512,
     cpu: 256,
     containerPort: 8080,
-    hostPort: 80,
   },
 };
 
