@@ -2,8 +2,10 @@ import * as cdk from 'aws-cdk-lib';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as elb from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import { Construct } from 'constructs';
+import { AlbConfig } from '../config/type';
 
 interface AlbStackProps extends cdk.StackProps {
+  config: AlbConfig,
   vpc: ec2.Vpc;
 }
 
@@ -17,7 +19,7 @@ export class AlbStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: AlbStackProps) {
     super(scope, id, props);
 
-    const { vpc } = props;
+    const { config, vpc } = props;
 
     this.alb = new elb.ApplicationLoadBalancer(this, 'LB', {
       vpc,
@@ -34,6 +36,8 @@ export class AlbStack extends cdk.Stack {
       protocol: elb.ApplicationProtocol.HTTP,
     });
 
+    const healthCheckConfig = config.healthCheck;
+
     const targetGroupProps = {
       vpc,
       port: 80,
@@ -41,12 +45,12 @@ export class AlbStack extends cdk.Stack {
       targetType: elb.TargetType.IP,
 
       healthCheck: {
-        path: '/health_check',
-        interval: cdk.Duration.seconds(30),
-        timeout: cdk.Duration.seconds(5),
-        healthyThresholdCount: 5,
-        unhealthyThresholdCount: 2,
-        healthyHttpCodes: '200',
+        path: healthCheckConfig.path,
+        interval: cdk.Duration.seconds(healthCheckConfig.intervalSec),
+        timeout: cdk.Duration.seconds(healthCheckConfig.timeoutSec),
+        healthyThresholdCount: healthCheckConfig.healthyThresholdCount,
+        unhealthyThresholdCount: healthCheckConfig.unhealthyThresholdCount,
+        healthyHttpCodes: healthCheckConfig.healthyHttpCodes,
       },
     };
 

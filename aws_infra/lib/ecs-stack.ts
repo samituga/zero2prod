@@ -5,8 +5,10 @@ import * as ecs from 'aws-cdk-lib/aws-ecs';
 import { DeploymentControllerType } from 'aws-cdk-lib/aws-ecs/lib/base/base-service';
 import { ApplicationTargetGroup } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import { Construct } from 'constructs';
+import { EcsConfig } from '../config/type';
 
 interface EcsStackProps extends cdk.StackProps {
+  config: EcsConfig,
   vpc: ec2.Vpc;
   repository: ecr.Repository;
   blueTargetGroup: ApplicationTargetGroup;
@@ -20,22 +22,24 @@ export class EcsStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: EcsStackProps) {
     super(scope, id, props);
 
-    const { vpc, repository, blueTargetGroup, greenTargetGroup } = props;
+    const { config, vpc, repository, blueTargetGroup, greenTargetGroup } = props;
 
     this.ecsCluster = new ecs.Cluster(this, 'MyEcsCluster', {
       vpc: vpc,
     });
 
+    const taskDefConfig = config.taskDefConfig;
+
     const taskDefinition = new ecs.FargateTaskDefinition(this, 'MyTaskDef');
     taskDefinition.addContainer('MyContainer', {
       image: ecs.ContainerImage.fromEcrRepository(repository, 'latest'),
       essential: true,
-      memoryLimitMiB: 512,
-      cpu: 256,
+      memoryLimitMiB: taskDefConfig.memoryLimitMiB,
+      cpu: taskDefConfig.cpu,
       portMappings: [
         {
-          containerPort: 8080,
-          hostPort: 8080,
+          containerPort: taskDefConfig.containerPort,
+          hostPort: taskDefConfig.hostPort,
           protocol: ecs.Protocol.TCP,
         },
       ],
@@ -50,7 +54,7 @@ export class EcsStack extends cdk.Stack {
 
     this.ecsService = new ecs.FargateService(this, 'MyFargateService', {
       cluster: this.ecsCluster,
-      desiredCount: 2,
+      desiredCount: config.desiredCount,
       deploymentController: { type: DeploymentControllerType.CODE_DEPLOY },
       taskDefinition,
       assignPublicIp: true,
