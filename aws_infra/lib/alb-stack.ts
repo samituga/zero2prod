@@ -35,7 +35,7 @@ export class AlbStack extends cdk.Stack {
 
     const healthCheckConfig = config.healthCheck;
 
-    const targetGroupProps = {
+    const targetGroupProps: elb.ApplicationTargetGroupProps = {
       vpc,
       port: ecsConfig.taskDefConfig.containerPort,
       protocol: elb.ApplicationProtocol.HTTP,
@@ -56,7 +56,7 @@ export class AlbStack extends cdk.Stack {
     this.targetGroupGreen = new elb.ApplicationTargetGroup(this, 'GreenTargetGroup', targetGroupProps);
 
     this.listener80.addTargetGroups('TargetGroupAttachment', {
-      targetGroups: [this.targetGroupBlue, this.targetGroupGreen],
+      targetGroups: [this.targetGroupBlue],
     });
 
     new cdk.CfnOutput(this, 'LoadBalancerDNS', {

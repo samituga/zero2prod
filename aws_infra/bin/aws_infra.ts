@@ -27,6 +27,9 @@ const config = getConfig(scope);
 
 const app = new cdk.App();
 
+cdk.Tags.of(app).add('Scope', scope);
+cdk.Tags.of(app).add('Stack', 'zero2prod');
+
 const ecrStack = new EcrStack(app, stackId(scope, 'EcrStack'), {
   env,
 });

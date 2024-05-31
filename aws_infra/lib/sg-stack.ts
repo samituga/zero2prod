@@ -22,12 +22,12 @@ export class SgStack extends cdk.Stack {
     this.alb = new ec2.SecurityGroup(this, 'AlbSecurityGroup', {
       vpc,
       description: 'Allow HTTP and HTTPS traffic to load balancer',
-      allowAllOutbound: false,
+      allowAllOutbound: true,
     });
 
     this.ecs = new ec2.SecurityGroup(this, 'EcsSecurityGroup', {
       vpc,
-      allowAllOutbound: false,
+      allowAllOutbound: true,
     });
 
     this.rds = new ec2.SecurityGroup(this, 'RdsSecurityGroup', {
@@ -43,12 +43,12 @@ export class SgStack extends cdk.Stack {
   private albRules(ecsConfig: EcsConfig) {
     this.alb.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(80), 'allow HTTP traffic from anywhere');
     // this.alb.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(443), 'allow HTTPS traffic from anywhere'); TODO
-    this.alb.addEgressRule(this.ecs, ec2.Port.tcp(ecsConfig.taskDefConfig.containerPort));
+    // this.alb.addEgressRule(this.ecs, ec2.Port.tcp(ecsConfig.taskDefConfig.containerPort));
   }
 
   private ecsRules(ecsConfig: EcsConfig, rdsConfig: RdsConfig) {
     this.ecs.addIngressRule(this.alb, ec2.Port.tcp(ecsConfig.taskDefConfig.containerPort));
-    this.ecs.addEgressRule(this.rds, ec2.Port.tcp(rdsConfig.port));
+    // this.ecs.addEgressRule(this.rds, ec2.Port.tcp(rdsConfig.port));
   }
 
   private rdsRules(vpc: ec2.Vpc, rdsConfig: RdsConfig) {

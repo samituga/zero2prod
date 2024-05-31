@@ -31,10 +31,17 @@ export class EcsStack extends cdk.Stack {
 
     const taskDefinition = new ecs.FargateTaskDefinition(this, 'TaskDef');
     taskDefinition.addContainer('TaskContainer', {
-      image: ecs.ContainerImage.fromEcrRepository(repository, 'latest'),
+      image: ecs.ContainerImage.fromRegistry('yeasy/simple-web'), //  ecs.ContainerImage.fromEcrRepository(repository, 'latest')
       essential: true,
       memoryLimitMiB: taskDefConfig.memoryLimitMiB,
       cpu: taskDefConfig.cpu,
+      logging: new ecs.AwsLogDriver({ streamPrefix: 'EventDemo', mode: ecs.AwsLogDriverMode.NON_BLOCKING }),
+      healthCheck: {
+        command: ['CMD-SHELL', `curl -f http://localhost:${taskDefConfig.containerPort}/ || exit 1`],
+        interval: cdk.Duration.seconds(30),
+        retries: 3,
+        timeout: cdk.Duration.seconds(10),
+      },
       portMappings: [
         {
           containerPort: taskDefConfig.containerPort,
@@ -42,6 +49,7 @@ export class EcsStack extends cdk.Stack {
         },
       ],
       environment: {
+        PORT: taskDefConfig.containerPort.toString(),
         APP_DATABASE__USERNAME: '',
         APP_DATABASE__PASSWORD: '',
         APP_DATABASE__HOST: '',

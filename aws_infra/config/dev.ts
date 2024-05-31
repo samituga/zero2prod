@@ -11,7 +11,7 @@ const certificate: CertificateConfig = {
 
 const alb: AlbConfig = {
   healthCheck: {
-    path: '/health_check',
+    path: '/',
     intervalSec: 30,
     timeoutSec: 5,
     healthyThresholdCount: 5,
@@ -33,7 +33,7 @@ const ecs: EcsConfig = {
     imageTag: 'latest',
     memoryLimitMiB: 512,
     cpu: 256,
-    containerPort: 8080,
+    containerPort: 80, // 8080
   },
 };
 
