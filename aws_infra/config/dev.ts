@@ -1,4 +1,4 @@
-import { CertificateConfig, Config, EcsConfig, AlbConfig, VpcConfig, RdsConfig } from './type';
+import { AlbConfig, CertificateConfig, Config, EcsConfig, RdsConfig, VpcConfig } from './type';
 
 const vpc: VpcConfig = {
   maxAzs: 2,
@@ -23,8 +23,9 @@ const alb: AlbConfig = {
 const rds: RdsConfig = {
   allocatedStorage: 20,
   maxAllocatedStorage: 40,
-  instanceType: 't3.micro'
-}
+  instanceType: 't3.micro',
+  port: 5432,
+};
 
 const ecs: EcsConfig = {
   desiredCount: 1,

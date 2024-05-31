@@ -8,7 +8,7 @@ import { Construct } from 'constructs';
 import { EcsConfig } from '../config/type';
 
 interface EcsStackProps extends cdk.StackProps {
-  config: EcsConfig,
+  config: EcsConfig;
   vpc: ec2.Vpc;
   repository: ecr.Repository;
   blueTargetGroup: ApplicationTargetGroup;

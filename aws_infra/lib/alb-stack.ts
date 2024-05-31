@@ -5,8 +5,8 @@ import { Construct } from 'constructs';
 import { AlbConfig, EcsConfig } from '../config/type';
 
 interface AlbStackProps extends cdk.StackProps {
-  config: AlbConfig,
-  ecsConfig: EcsConfig,
+  config: AlbConfig;
+  ecsConfig: EcsConfig;
   vpc: ec2.Vpc;
 }
 

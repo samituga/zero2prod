@@ -28,9 +28,10 @@ export interface HealthCheckConfig {
 }
 
 export interface RdsConfig {
-  allocatedStorage: number,
-  maxAllocatedStorage: number,
-  instanceType: string
+  allocatedStorage: number;
+  maxAllocatedStorage: number;
+  instanceType: string;
+  port: number;
 }
 
 export interface EcsConfig {
