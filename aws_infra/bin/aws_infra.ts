@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
+import 'source-map-support/register';
+import { VpcStack } from '../lib/vpc-stack';
 import { Zero2ProdStack } from '../lib/zero_2_prod-stack';
-import {VpcStack} from "../lib/vpc-stack";
 
 const app = new cdk.App();
 new Zero2ProdStack(app, 'Zero2ProdStack', {
