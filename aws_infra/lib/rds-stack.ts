@@ -13,11 +13,13 @@ export class RdsStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: RdsStackProps) {
     super(scope, id, props);
 
+    const { vpc } = props;
+
     this.dbInstance = new rds.DatabaseInstance(this, 'Zero2ProdDB', {
       engine: rds.DatabaseInstanceEngine.postgres({
         version: rds.PostgresEngineVersion.VER_16_2,
       }),
-      vpc: props.vpc,
+      vpc,
       allocatedStorage: 20,
       maxAllocatedStorage: 40,
       instanceType: new cdk.aws_ec2.InstanceType('t3.micro'),

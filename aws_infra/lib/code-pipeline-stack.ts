@@ -17,6 +17,8 @@ export class PipelineStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: PipelineStackProps) {
     super(scope, id, props);
 
+    const { fargateService, deploymentGroup, repository, connectionArn } = props;
+
     const sourceOutput = new pipeline.Artifact();
     const buildOutput = new pipeline.Artifact();
 
@@ -30,7 +32,7 @@ export class PipelineStack extends cdk.Stack {
               owner: 'your-github-username',
               repo: 'your-repo-name',
               branch: 'main',
-              connectionArn: props.connectionArn,
+              connectionArn: connectionArn,
               output: sourceOutput,
             }),
           ],
@@ -58,7 +60,7 @@ export class PipelineStack extends cdk.Stack {
           actions: [
             new pipelineactions.CodeDeployEcsDeployAction({
               actionName: 'ECS_Deploy',
-              deploymentGroup: props.deploymentGroup,
+              deploymentGroup: deploymentGroup,
               appSpecTemplateFile: buildOutput.atPath('appspec.yaml'),
               taskDefinitionTemplateFile: buildOutput.atPath('taskdef.json'), //TODO generate this file from FargateTaskDefinition toString
               containerImageInputs: [{ input: buildOutput }],

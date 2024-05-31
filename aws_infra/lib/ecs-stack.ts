@@ -20,13 +20,15 @@ export class EcsStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: EcsStackProps) {
     super(scope, id, props);
 
+    const { vpc, repository, blueTargetGroup, greenTargetGroup } = props;
+
     this.ecsCluster = new ecs.Cluster(this, 'MyEcsCluster', {
-      vpc: props.vpc,
+      vpc: vpc,
     });
 
     const taskDefinition = new ecs.FargateTaskDefinition(this, 'MyTaskDef');
     taskDefinition.addContainer('MyContainer', {
-      image: ecs.ContainerImage.fromEcrRepository(props.repository, 'latest'),
+      image: ecs.ContainerImage.fromEcrRepository(repository, 'latest'),
       essential: true,
       memoryLimitMiB: 512,
       cpu: 256,
@@ -55,6 +57,6 @@ export class EcsStack extends cdk.Stack {
     });
 
     // Attach the ECS service to the blue target group initially
-    this.ecsService.attachToApplicationTargetGroup(props.blueTargetGroup);
+    this.ecsService.attachToApplicationTargetGroup(blueTargetGroup);
   }
 }

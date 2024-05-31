@@ -22,17 +22,19 @@ export class CodeDeployStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: CodeDeployStackProps) {
     super(scope, id, props);
 
+    const { ecsService, ecsCluster, vpc, alb, listenerBlue, listenerGreen, targetGroupBlue, targetGroupGreen } = props;
+
     const application = new codedeploy.EcsApplication(this, 'EcsApplication');
 
     this.deploymentGroup = new codedeploy.EcsDeploymentGroup(this, 'EcsDeploymentGroup', {
       application,
-      service: props.ecsService,
+      service: ecsService,
       deploymentConfig: codedeploy.EcsDeploymentConfig.ALL_AT_ONCE,
       blueGreenDeploymentConfig: {
-        listener: props.listenerBlue,
-        testListener: props.listenerGreen,
-        blueTargetGroup: props.targetGroupBlue,
-        greenTargetGroup: props.targetGroupGreen,
+        listener: listenerBlue,
+        testListener: listenerGreen,
+        blueTargetGroup: targetGroupBlue,
+        greenTargetGroup: targetGroupGreen,
       },
       autoRollback: {
         failedDeployment: true,
@@ -40,7 +42,7 @@ export class CodeDeployStack extends cdk.Stack {
     });
 
     new cdk.CfnOutput(this, 'LoadBalancerDNS', {
-      value: props.alb.loadBalancerDnsName,
+      value: alb.loadBalancerDnsName,
     });
   }
 }

@@ -17,8 +17,10 @@ export class AlbStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: AlbStackProps) {
     super(scope, id, props);
 
+    const { vpc } = props;
+
     this.alb = new elb.ApplicationLoadBalancer(this, 'LB', {
-      vpc: props.vpc,
+      vpc,
       internetFacing: true,
     });
 
@@ -33,7 +35,7 @@ export class AlbStack extends cdk.Stack {
     });
 
     const targetGroupProps = {
-      vpc: props.vpc,
+      vpc,
       port: 80,
       protocol: elb.ApplicationProtocol.HTTP,
       targetType: elb.TargetType.IP,
