@@ -8,6 +8,7 @@ interface AlbStackProps extends cdk.StackProps {
   config: AlbConfig;
   ecsConfig: EcsConfig;
   vpc: ec2.Vpc;
+  sg: ec2.SecurityGroup;
 }
 
 export class AlbStack extends cdk.Stack {
@@ -19,10 +20,11 @@ export class AlbStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: AlbStackProps) {
     super(scope, id, props);
 
-    const { config, ecsConfig, vpc } = props;
+    const { config, ecsConfig, vpc, sg } = props;
 
     this.alb = new elb.ApplicationLoadBalancer(this, 'Alb', {
       vpc,
+      securityGroup: sg,
       internetFacing: true,
     });
 
