@@ -4,6 +4,7 @@ import * as pipelineactions from 'aws-cdk-lib/aws-codepipeline-actions';
 import { Construct } from 'constructs';
 import * as codebuild from 'aws-cdk-lib/aws-codebuild';
 import * as ecr from 'aws-cdk-lib/aws-ecr';
+import * as iam from 'aws-cdk-lib/aws-iam';
 
 interface PipelineStackProps extends cdk.StackProps {
   codeSourceAction: pipelineactions.CodeStarConnectionsSourceAction;
@@ -38,6 +39,18 @@ export class CodePipelineStack extends cdk.Stack {
       },
       buildSpec: codebuild.BuildSpec.fromSourceFilename('aws_infra/buildspec.yaml'),
     });
+
+    codeBuildProject.addToRolePolicy(
+      new iam.PolicyStatement({
+        actions: [
+          'ecr:GetDownloadUrlForLayer',
+          'ecr:BatchGetImage',
+          'ecr:BatchCheckLayerAvailability',
+          'ecr:GetAuthorizationToken',
+        ],
+        resources: [repository.repositoryArn],
+      }),
+    );
 
     const codeBuildOutput = new pipeline.Artifact();
 
