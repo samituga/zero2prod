@@ -48,7 +48,7 @@ export class CodePipelineStack extends cdk.Stack {
           'ecr:BatchCheckLayerAvailability',
           'ecr:GetAuthorizationToken',
         ],
-        resources: [repository.repositoryArn],
+        resources: ['*'],
       }),
     );
 
