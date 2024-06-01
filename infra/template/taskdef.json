@@ -1,0 +1,62 @@
+{
+  "containerDefinitions": [
+    {
+      "name": "TaskContainer",
+      "image": "<REPOSITORY_URI>:<IMAGE_TAG>",
+      "portMappings": [
+        {
+          "containerPort": <TASK_DEF_CONTAINER_PORT>,
+          "protocol": "tcp"
+        }
+      ],
+      "essential": true
+    }
+  ],
+  "taskRoleArn": "<TASK_DEF_ROLE_ARN>",
+  "executionRoleArn": "<TASK_DEF_EXEC_ROLE_ARN>",
+  "family": "<TASK_DEF_FAMILY>",
+  "networkMode": "awsvpc",
+  "compatibilities": [
+    "EC2",
+    "FARGATE"
+  ],
+  "requiresCompatibilities": [
+    "FARGATE"
+  ],
+  "cpu": "<TASK_DEF_CPU>",
+  "memory": "<TASK_DEF_MEM_LIMIT_MIB>",
+  "environment": [
+    {
+      "name": "APP_DATABASE__USERNAME",
+      "value": "<TASK_DEF_DB_USERNAME>"
+    },
+    {
+      "name": "APP_DATABASE__DATABASE_NAME",
+      "value": "<TASK_DEF_DB_NAME>"
+    },
+    {
+      "name": "APP_DATABASE__HOST",
+      "value": "<TASK_DEF_DB_HOST>"
+    },
+    {
+      "name": "APP_DATABASE__PORT",
+      "value": "<TASK_DEF_DB_PORT>"
+    }
+  ],
+  "secrets": [
+    {
+      "name": "APP_DATABASE__PASSWORD",
+      "valueFrom": "<TASK_DEF_DB_PASSWORD>"
+    }
+  ],
+  "healthCheck": {
+    "command": [
+      "CMD-SHELL",
+      "<TASK_DEF_HC_COMMAND>"
+    ],
+    "interval": <TASK_DEF_HC_INTERVAL>,
+    "timeout": <TASK_DEF_HC_TIMEOUT>,
+    "retries": <TASK_DEF_HC_RETRIES>,
+    "startPeriod": <TASK_DEF_HC_START_PERIOD>
+  }
+}

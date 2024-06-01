@@ -1,4 +1,7 @@
-FROM lukemathwalker/cargo-chef:latest-rust-1.78.0 as chef
+ARG CARGO_CHEF_IMAGE=lukemathwalker/cargo-chef:latest-rust-1.78.0
+ARG RUNTIME_IMAGE=debian:bookworm-slim
+
+FROM ${CARGO_CHEF_IMAGE} as chef
 WORKDIR /app
 RUN apt update && apt install lld clang -y
 
@@ -15,10 +18,10 @@ COPY . .
 ENV SQLX_OFFLINE true
 RUN cargo build --release --bin zero2prod
 
-FROM debian:bookworm-slim AS runtime
+FROM ${RUNTIME_IMAGE} AS runtime
 WORKDIR /app
 RUN apt-get update -y \
-  && apt-get install -y --no-install-recommends openssl ca-certificates \
+  && apt-get install -y --no-install-recommends openssl ca-certificates wget \
   && apt-get autoremove -y \
   && apt-get clean -y \
   && rm -rf /var/lib/apt/lists/*

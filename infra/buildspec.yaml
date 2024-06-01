@@ -27,9 +27,10 @@ phases:
         --target depbuilder \
         --cache-from $REPOSITORY_URI:depbuilder \
         --build-arg CARGO_CHEF_IMAGE=$REPOSITORY_URI:latest-rust-1.78.0 \
+        --build-arg RUNTIME_IMAGE=public.ecr.aws/debian/debian:bookworm-slim \
         --build-arg BUILDKIT_INLINE_CACHE=1 \
         --tag $IMAGE_REPO_NAME:depbuilder \
-        --file aws.Dockerfile .
+        --file Dockerfile .
       - |
         docker tag $IMAGE_REPO_NAME:depbuilder \
         $REPOSITORY_URI:depbuilder
@@ -43,7 +44,7 @@ phases:
         --build-arg BUILDKIT_INLINE_CACHE=1 \
         --progress=plain \
         --tag $IMAGE_REPO_NAME:latest \
-        --file aws.Dockerfile .
+        --file Dockerfile .
       - |
         docker tag \
         $IMAGE_REPO_NAME:latest \
@@ -58,9 +59,12 @@ phases:
       - echo Writing image definitions file...
       - printf '[{"name":"rust-server","imageUri":"%s"}]' $REPOSITORY_URI:latest > imagedefinitions.json
       - echo Generating AppSpec file...
-      - ./scripts/generate_appspec.sh
+      - ./scripts/generate_from_template.sh infra/template/appspec.yaml
+      - echo Generating TaskDef file...
+      - ./scripts/generate_from_template.sh infra/template/taskdef.json
 
 artifacts:
   files:
     - imagedefinitions.json
     - appspec.yaml
+    - taskdef.json
