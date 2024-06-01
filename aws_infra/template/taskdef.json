@@ -5,7 +5,7 @@
       "image": "<REPOSITORY_URI>:<IMAGE_TAG>",
       "portMappings": [
         {
-          "containerPort": "<TASK_DEF_CONTAINER_PORT>",
+          "containerPort": <TASK_DEF_CONTAINER_PORT>,
           "protocol": "tcp"
         }
       ],
@@ -23,8 +23,8 @@
   "requiresCompatibilities": [
     "FARGATE"
   ],
-  "cpu": "<TASK_DEF_CPU>",
-  "memory": "<TASK_DEF_MEM_LIMIT_MIB>",
+  "cpu": <TASK_DEF_CPU>,
+  "memory": <TASK_DEF_MEM_LIMIT_MIB>,
   "environment": [
     {
       "name": "APP_DATABASE__USERNAME",
@@ -54,9 +54,9 @@
       "CMD-SHELL",
       "<TASK_DEF_HC_COMMAND>"
     ],
-    "interval": "<TASK_DEF_HC_INTERVAL>",
-    "timeout": "<TASK_DEF_HC_TIMEOUT>",
-    "retries": "<TASK_DEF_HC_RETRIES>",
-    "startPeriod": "<TASK_DEF_HC_START_PERIOD>"
+    "interval": <TASK_DEF_HC_INTERVAL>,
+    "timeout": <TASK_DEF_HC_TIMEOUT>,
+    "retries": <TASK_DEF_HC_RETRIES>,
+    "startPeriod": <TASK_DEF_HC_START_PERIOD>
   }
 }

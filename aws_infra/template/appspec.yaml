@@ -6,4 +6,4 @@ Resources:
         TaskDefinition: "<TASK_DEF_ARN>"
         LoadBalancerInfo:
           ContainerName: "ecs-service-container"
-          ContainerPort: "<TASK_DEF_CONTAINER_PORT>"
+          ContainerPort: <TASK_DEF_CONTAINER_PORT>

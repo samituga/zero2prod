@@ -7,6 +7,7 @@ repos:
       - id: check-symlinks
       - id: check-yaml
       - id: check-json
+        exclude: ^aws_infra/template/
       - id: check-vcs-permalinks
       - id: trailing-whitespace
         exclude: ^test/
