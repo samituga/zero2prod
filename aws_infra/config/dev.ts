@@ -1,7 +1,7 @@
 import {
   AlbConfig,
   CertificateConfig,
-  CodeSourceConfig,
+  CodePipelineConfig,
   Config,
   EcsConfig,
   RdsConfig,
@@ -61,10 +61,12 @@ const ecs: EcsConfig = {
   },
 };
 
-const codeSource: CodeSourceConfig = {
-  owner: 'samituga',
-  repo: 'zero2prod',
-  branch: 'aws-infra', // TODO main
+const codePipeline: CodePipelineConfig = {
+  codeSource: {
+    owner: 'samituga',
+    repo: 'zero2prod',
+    branch: 'aws-infra', // TODO main
+  },
 };
 
 export const devConfig: Config = {
@@ -73,5 +75,5 @@ export const devConfig: Config = {
   alb,
   rds,
   ecs,
-  codeSource,
+  codePipeline,
 };

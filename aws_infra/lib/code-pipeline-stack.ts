@@ -5,10 +5,11 @@ import { Construct } from 'constructs';
 import * as codebuild from 'aws-cdk-lib/aws-codebuild';
 import * as ecr from 'aws-cdk-lib/aws-ecr';
 import * as iam from 'aws-cdk-lib/aws-iam';
+import * as codestarconnections from 'aws-cdk-lib/aws-codestarconnections';
+import { CodePipelineConfig, CodeSourceConfig } from '../config/type';
 
 interface PipelineStackProps extends cdk.StackProps {
-  codeSourceAction: pipelineactions.CodeStarConnectionsSourceAction;
-  codeSourceOutput: pipeline.Artifact;
+  config: CodePipelineConfig;
   repository: ecr.Repository;
   taskDefinitionArn: string;
 }
@@ -17,7 +18,57 @@ export class CodePipelineStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: PipelineStackProps) {
     super(scope, id, props);
 
-    const { codeSourceAction, codeSourceOutput, repository, taskDefinitionArn } = props;
+    const { config, repository, taskDefinitionArn } = props;
+
+    const codeSourceOutput = new pipeline.Artifact();
+    const codeBuildOutput = new pipeline.Artifact();
+
+    const codeSourceAction = this.codeSourceAction({
+      config: config.codeSource,
+      output: codeSourceOutput,
+    });
+
+    const codeBuildAction = this.codeBuildAction({
+      repository,
+      taskDefinitionArn,
+      codeSourceOutput,
+      output: codeBuildOutput,
+    });
+
+    const codePipeline = new pipeline.Pipeline(this, 'Pipeline', {
+      stages: [
+        {
+          stageName: 'Source',
+          actions: [codeSourceAction],
+        },
+        {
+          stageName: 'Build',
+          actions: [codeBuildAction],
+        },
+      ],
+    });
+  }
+
+  private codeSourceAction(props: CodeSourceProps) {
+    const { config, output } = props;
+
+    const connection = new codestarconnections.CfnConnection(this, 'GitHubConnection', {
+      connectionName: 'GitHubConnection',
+      providerType: 'GitHub',
+    });
+
+    return new pipelineactions.CodeStarConnectionsSourceAction({
+      actionName: 'CodeStarSource',
+      owner: config.owner,
+      repo: config.repo,
+      branch: config.branch,
+      connectionArn: connection.attrConnectionArn,
+      output: output,
+    });
+  }
+
+  private codeBuildAction(props: CodeBuildProps) {
+    const { repository, taskDefinitionArn, codeSourceOutput, output } = props;
 
     const codeBuildProject = new codebuild.PipelineProject(this, 'CodeBuildProject', {
       cache: codebuild.Cache.local(codebuild.LocalCacheMode.DOCKER_LAYER),
@@ -47,45 +98,38 @@ export class CodePipelineStack extends cdk.Stack {
           'ecr:BatchGetImage',
           'ecr:BatchCheckLayerAvailability',
           'ecr:GetAuthorizationToken',
-          "ecr:GetRepositoryPolicy",
-          "ecr:DescribeRepositories",
-          "ecr:ListImages",
-          "ecr:DescribeImages",
-          "ecr:ListTagsForResource",
-          "ecr:DescribeImageScanFindings",
-          "ecr:InitiateLayerUpload",
-          "ecr:UploadLayerPart",
-          "ecr:CompleteLayerUpload",
-          "ecr:PutImage"
+          'ecr:GetRepositoryPolicy',
+          'ecr:DescribeRepositories',
+          'ecr:ListImages',
+          'ecr:DescribeImages',
+          'ecr:ListTagsForResource',
+          'ecr:DescribeImageScanFindings',
+          'ecr:InitiateLayerUpload',
+          'ecr:UploadLayerPart',
+          'ecr:CompleteLayerUpload',
+          'ecr:PutImage',
         ],
         resources: ['*'],
       }),
     );
 
-    const codeBuildOutput = new pipeline.Artifact();
-
-    const codeBuildAction = new pipelineactions.CodeBuildAction({
+    return new pipelineactions.CodeBuildAction({
       actionName: 'Build',
       project: codeBuildProject,
       input: codeSourceOutput,
-      outputs: [codeBuildOutput],
-    });
-
-    const codePipeline = new pipeline.Pipeline(this, 'Pipeline', {
-      stages: [
-        {
-          stageName: 'Source',
-          actions: [codeSourceAction],
-        },
-        {
-          stageName: 'Build',
-          actions: [codeBuildAction],
-        },
-      ],
-    });
-
-    new cdk.CfnOutput(this, 'PipelineName', {
-      value: codePipeline.pipelineName,
+      outputs: [output],
     });
   }
+}
+
+interface CodeSourceProps {
+  config: CodeSourceConfig;
+  output: pipeline.Artifact;
+}
+
+interface CodeBuildProps {
+  repository: ecr.Repository;
+  taskDefinitionArn: string;
+  codeSourceOutput: pipeline.Artifact;
+  output: pipeline.Artifact;
 }

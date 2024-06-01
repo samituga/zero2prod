@@ -6,7 +6,7 @@ export interface Config {
   alb: AlbConfig;
   rds: RdsConfig;
   ecs: EcsConfig;
-  codeSource: CodeSourceConfig;
+  codePipeline: CodePipelineConfig;
 }
 
 export interface VpcConfig {
@@ -59,6 +59,10 @@ export interface AlbHealthCheckConfig extends BaseHealthCheckConfig {
   path: string;
   healthyThresholdCount: number;
   healthyHttpCodes: string;
+}
+
+export interface CodePipelineConfig {
+  codeSource: CodeSourceConfig;
 }
 
 export interface CodeSourceConfig {
