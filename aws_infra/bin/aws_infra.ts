@@ -69,4 +69,5 @@ const ecsStack = new EcsStack(app, stackId(scope, 'EcsStack'), {
   targetGroupBlue: albStack.targetGroupBlue,
   vpc,
   sg: sgStack.ecs,
+  rdsProps: rdsStack.dbProps,
 });

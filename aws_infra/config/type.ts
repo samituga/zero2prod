@@ -18,22 +18,15 @@ export interface CertificateConfig {
 }
 
 export interface AlbConfig {
-  healthCheck: HealthCheckConfig;
-}
-
-export interface HealthCheckConfig {
-  path: string;
-  intervalSec: number;
-  timeoutSec: number;
-  healthyThresholdCount: number;
-  unhealthyThresholdCount: number;
-  healthyHttpCodes: string;
+  healthCheck: AlbHealthCheckConfig;
 }
 
 export interface RdsConfig {
   allocatedStorage: number;
   maxAllocatedStorage: number;
   instanceType: string;
+  username: string;
+  databaseName: string;
   port: number;
 }
 
@@ -47,4 +40,22 @@ export interface TaskDefConfig {
   memoryLimitMiB: number;
   cpu: number;
   containerPort: number;
+  healthCheck: TaskDefHealthCheckConfig;
+}
+
+export interface BaseHealthCheckConfig {
+  intervalSec: number;
+  timeoutSec: number;
+  unhealthyThresholdCount: number;
+}
+
+export interface TaskDefHealthCheckConfig extends BaseHealthCheckConfig {
+  command: string[];
+  startPeriodSec: number;
+}
+
+export interface AlbHealthCheckConfig extends BaseHealthCheckConfig {
+  path: string;
+  healthyThresholdCount: number;
+  healthyHttpCodes: string;
 }

@@ -5,6 +5,7 @@ import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as elb from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import { Construct } from 'constructs';
 import { EcsConfig } from '../config/type';
+import { RdsInstanceProps } from './rds-stack';
 
 interface EcsStackProps extends cdk.StackProps {
   config: EcsConfig;
@@ -12,6 +13,7 @@ interface EcsStackProps extends cdk.StackProps {
   targetGroupBlue: elb.ApplicationTargetGroup;
   vpc: ec2.Vpc;
   sg: ec2.SecurityGroup;
+  rdsProps: RdsInstanceProps;
 }
 
 export class EcsStack extends cdk.Stack {
@@ -21,26 +23,28 @@ export class EcsStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: EcsStackProps) {
     super(scope, id, props);
 
-    const { config, vpc, sg, repository, targetGroupBlue } = props;
+    const { config, vpc, sg, repository, targetGroupBlue, rdsProps } = props;
 
     this.ecsCluster = new ecs.Cluster(this, 'EcsCluster', {
       vpc: vpc,
     });
 
     const taskDefConfig = config.taskDefConfig;
+    const healthCheckConfig = taskDefConfig.healthCheck;
 
     const taskDefinition = new ecs.FargateTaskDefinition(this, 'TaskDef');
     taskDefinition.addContainer('TaskContainer', {
-      image: ecs.ContainerImage.fromRegistry('yeasy/simple-web'), //  ecs.ContainerImage.fromEcrRepository(repository, 'latest')
+      image: ecs.ContainerImage.fromEcrRepository(repository, taskDefConfig.imageTag),
       essential: true,
       memoryLimitMiB: taskDefConfig.memoryLimitMiB,
       cpu: taskDefConfig.cpu,
       logging: new ecs.AwsLogDriver({ streamPrefix: 'EventDemo', mode: ecs.AwsLogDriverMode.NON_BLOCKING }),
       healthCheck: {
-        command: ['CMD-SHELL', `curl -f http://localhost:${taskDefConfig.containerPort}/ || exit 1`],
-        interval: cdk.Duration.seconds(30),
-        retries: 3,
-        timeout: cdk.Duration.seconds(10),
+        command: healthCheckConfig.command,
+        interval: cdk.Duration.seconds(healthCheckConfig.intervalSec),
+        retries: healthCheckConfig.unhealthyThresholdCount,
+        timeout: cdk.Duration.seconds(healthCheckConfig.timeoutSec),
+        startPeriod: cdk.Duration.seconds(healthCheckConfig.startPeriodSec),
       },
       portMappings: [
         {
@@ -50,11 +54,13 @@ export class EcsStack extends cdk.Stack {
       ],
       environment: {
         PORT: taskDefConfig.containerPort.toString(),
-        APP_DATABASE__USERNAME: '',
-        APP_DATABASE__PASSWORD: '',
-        APP_DATABASE__HOST: '',
-        APP_DATABASE__PORT: '',
-        APP_DATABASE__DATABASE_NAME: '',
+        APP_DATABASE__USERNAME: rdsProps.credentials.username,
+        APP_DATABASE__HOST: rdsProps.address,
+        APP_DATABASE__PORT: rdsProps.port.toString(),
+        APP_DATABASE__DATABASE_NAME: rdsProps.databaseName,
+      },
+      secrets: {
+        APP_DATABASE__PASSWORD: ecs.Secret.fromSecretsManager(rdsProps.credentials.secret!),
       },
     });
 
