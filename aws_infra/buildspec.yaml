@@ -27,12 +27,10 @@ phases:
         --target depbuilder \
         --cache-from $REPOSITORY_URI:depbuilder \
         --build-arg CARGO_CHEF_IMAGE=$REPOSITORY_URI:latest-rust-1.78.0 \
+        --build-arg RUNTIME_IMAGE=public.ecr.aws/debian/debian:bookworm-slim \
         --build-arg BUILDKIT_INLINE_CACHE=1 \
-        --tag $IMAGE_REPO_NAME:depbuilder \
-        --file aws.Dockerfile .
-      - |
-        docker tag $IMAGE_REPO_NAME:depbuilder \
-        $REPOSITORY_URI:depbuilder
+        --tag REPOSITORY_URI:depbuilder \
+        --file Dockerfile .
 
       - echo Building Docker image...
       - |
@@ -42,12 +40,8 @@ phases:
         --build-arg CARGO_CHEF_IMAGE=$REPOSITORY_URI:latest-rust-1.78.0 \
         --build-arg BUILDKIT_INLINE_CACHE=1 \
         --progress=plain \
-        --tag $IMAGE_REPO_NAME:latest \
+        --tag REPOSITORY_URI:latest \
         --file aws.Dockerfile .
-      - |
-        docker tag \
-        $IMAGE_REPO_NAME:latest \
-        $REPOSITORY_URI:latest
 
   post_build:
     commands:
