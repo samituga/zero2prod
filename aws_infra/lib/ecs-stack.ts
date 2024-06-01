@@ -19,6 +19,7 @@ interface EcsStackProps extends cdk.StackProps {
 export class EcsStack extends cdk.Stack {
   public readonly ecsCluster: ecs.Cluster;
   public readonly ecsService: ecs.FargateService;
+  public readonly taskDefinitionArn: string;
 
   constructor(scope: Construct, id: string, props: EcsStackProps) {
     super(scope, id, props);
@@ -53,7 +54,6 @@ export class EcsStack extends cdk.Stack {
         },
       ],
       environment: {
-        PORT: taskDefConfig.containerPort.toString(),
         APP_DATABASE__USERNAME: rdsProps.credentials.username,
         APP_DATABASE__HOST: rdsProps.address,
         APP_DATABASE__PORT: rdsProps.port.toString(),
@@ -63,6 +63,8 @@ export class EcsStack extends cdk.Stack {
         APP_DATABASE__PASSWORD: ecs.Secret.fromSecretsManager(rdsProps.credentials.secret!, 'password'),
       },
     });
+
+    this.taskDefinitionArn = taskDefinition.taskDefinitionArn;
 
     this.ecsService = new ecs.FargateService(this, 'FargateService', {
       cluster: this.ecsCluster,

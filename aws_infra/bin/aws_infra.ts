@@ -4,11 +4,14 @@ import 'source-map-support/register';
 import { getConfig, isScope, stackId } from '../config/helper';
 import { Scope } from '../config/type';
 import { AlbStack } from '../lib/alb-stack';
+import { CodeBuildStack } from '../lib/code-build-stack';
+import { CodeSourceStack } from '../lib/code-source-stack';
 import { EcrStack } from '../lib/ecr-stack';
 import { EcsStack } from '../lib/ecs-stack';
 import { RdsStack } from '../lib/rds-stack';
 import { SgStack } from '../lib/sg-stack';
 import { VpcStack } from '../lib/vpc-stack';
+import { CodePipelineStack } from '../lib/code-pipeline-stack';
 
 const envScope = process.env.CDK_DEPLOY_SCOPE;
 
@@ -70,4 +73,22 @@ const ecsStack = new EcsStack(app, stackId(scope, 'EcsStack'), {
   vpc,
   sg: sgStack.ecs,
   rdsProps: rdsStack.dbProps,
+});
+
+const codeSourceStack = new CodeSourceStack(app, stackId(scope, 'CodeSourceStack'), {
+  env,
+  config: config.codeSource,
+});
+
+const codeBuildStack = new CodeBuildStack(app, stackId(scope, 'CodeBuildStack'), {
+  env,
+  sourceOutput: codeSourceStack.output,
+  repository: ecrStack.repository,
+  taskDefinitionArn: ecsStack.taskDefinitionArn,
+});
+
+const codePipelineStack = new CodePipelineStack(app, stackId(scope, 'CodePipelineStack'), {
+  env,
+  codeSourceAction: codeSourceStack.action,
+  codeBuildAction: codeBuildStack.action,
 });

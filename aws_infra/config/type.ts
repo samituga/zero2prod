@@ -6,6 +6,7 @@ export interface Config {
   alb: AlbConfig;
   rds: RdsConfig;
   ecs: EcsConfig;
+  codeSource: CodeSourceConfig;
 }
 
 export interface VpcConfig {
@@ -58,4 +59,10 @@ export interface AlbHealthCheckConfig extends BaseHealthCheckConfig {
   path: string;
   healthyThresholdCount: number;
   healthyHttpCodes: string;
+}
+
+export interface CodeSourceConfig {
+  owner: string;
+  repo: string;
+  branch: string;
 }

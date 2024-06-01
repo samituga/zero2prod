@@ -1,4 +1,12 @@
-import { AlbConfig, CertificateConfig, Config, EcsConfig, RdsConfig, VpcConfig } from './type';
+import {
+  AlbConfig,
+  CertificateConfig,
+  CodeSourceConfig,
+  Config,
+  EcsConfig,
+  RdsConfig,
+  VpcConfig,
+} from './type';
 
 const vpc: VpcConfig = {
   maxAzs: 2,
@@ -41,7 +49,10 @@ const ecs: EcsConfig = {
     cpu: 256,
     containerPort,
     healthCheck: {
-      command: ['CMD-SHELL', `wget --no-verbose --tries=1 http://localhost:${containerPort}${healthCheckPath} || exit 1`],
+      command: [
+        'CMD-SHELL',
+        `wget --no-verbose --tries=1 http://localhost:${containerPort}${healthCheckPath} || exit 1`,
+      ],
       intervalSec: 30,
       timeoutSec: 2,
       unhealthyThresholdCount: 4,
@@ -50,10 +61,17 @@ const ecs: EcsConfig = {
   },
 };
 
+const codeSource: CodeSourceConfig = {
+  owner: 'samituga',
+  repo: 'zero2prod',
+  branch: 'aws-infra', // TODO main
+};
+
 export const devConfig: Config = {
   vpc,
   certificate,
   alb,
   rds,
   ecs,
+  codeSource,
 };
