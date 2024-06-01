@@ -36,7 +36,7 @@ export class CodePipelineStack extends cdk.Stack {
           },
         },
       },
-      buildSpec: codebuild.BuildSpec.fromSourceFilename('buildspec.yaml'),
+      buildSpec: codebuild.BuildSpec.fromSourceFilename('aws_infra/buildspec.yaml'),
     });
 
     const codeBuildOutput = new pipeline.Artifact();
