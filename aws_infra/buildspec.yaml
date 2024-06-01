@@ -30,7 +30,7 @@ phases:
         --build-arg RUNTIME_IMAGE=public.ecr.aws/debian/debian:bookworm-slim \
         --build-arg BUILDKIT_INLINE_CACHE=1 \
         --tag $IMAGE_REPO_NAME:depbuilder \
-        --file aws.Dockerfile .
+        --file Dockerfile .
       - |
         docker tag $IMAGE_REPO_NAME:depbuilder \
         $REPOSITORY_URI:depbuilder
