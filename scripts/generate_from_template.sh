@@ -18,7 +18,7 @@ cp "$FILE_PATH" "./$BASENAME"
 
 FILE_PATH="./$BASENAME"
 
-PLACEHOLDERS=($(grep -oP '<\K[^>]+(?=>)' "$FILE_PATH"))
+mapfile -t PLACEHOLDERS < <(grep -oP '<\K[^>]+(?=>)' "$FILE_PATH")
 
 MISSING_VARS=()
 
@@ -40,7 +40,11 @@ fi
 for PLACEHOLDER in "${PLACEHOLDERS[@]}"; do
   ENV_VAR=$(echo $PLACEHOLDER)
   ENV_VALUE=$(eval echo \$$ENV_VAR)
-  sed -i "s|<$PLACEHOLDER>|$ENV_VALUE|g" "$FILE_PATH"
+
+  # Escape characters that may confuse sed
+  ESCAPED_VALUE=$(echo "$ENV_VALUE" | sed -e 's/[\/&]/\\&/g' -e 's/|/\\|/g' -e 's/`/\\`/g' -e 's/\$/\\\$/g')
+
+  sed -i "s|<$PLACEHOLDER>|$ESCAPED_VALUE|g" "$FILE_PATH"
 done
 
 echo "Replacements complete. Modified file copied to the current directory as $BASENAME."
