@@ -23,8 +23,8 @@
   "requiresCompatibilities": [
     "FARGATE"
   ],
-  "cpu": <TASK_DEF_CPU>,
-  "memory": <TASK_DEF_MEM_LIMIT_MIB>,
+  "cpu": "<TASK_DEF_CPU>",
+  "memory": "<TASK_DEF_MEM_LIMIT_MIB>",
   "environment": [
     {
       "name": "APP_DATABASE__USERNAME",
