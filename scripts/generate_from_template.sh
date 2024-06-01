@@ -37,6 +37,8 @@ for PLACEHOLDER in "${PLACEHOLDERS[@]}"; do
   sed -i "s|<$PLACEHOLDER>|$ENV_VALUE|g" "$FILE_PATH"
 done
 
-cp "$FILE_PATH" ./appspec.yaml
+BASENAME=$(basename "$FILE_PATH")
 
-echo "Replacements complete. Modified file copied to the current directory."
+cp "$FILE_PATH" "./$BASENAME"
+
+echo "Replacements complete. Modified file copied to the current directory as $BASENAME."
