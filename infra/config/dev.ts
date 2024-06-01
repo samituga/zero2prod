@@ -62,7 +62,7 @@ const codePipeline: CodePipelineConfig = {
   codeSource: {
     owner: 'samituga',
     repo: 'zero2prod',
-    branch: 'aws-infra', // TODO main
+    branch: 'main',
   },
 };
 
