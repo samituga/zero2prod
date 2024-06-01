@@ -35,7 +35,7 @@ export class CodePipelineStack extends cdk.Stack {
       output: codeBuildOutput,
     });
 
-    const codePipeline = new pipeline.Pipeline(this, 'Pipeline', {
+    new pipeline.Pipeline(this, 'Pipeline', {
       stages: [
         {
           stageName: 'Source',
