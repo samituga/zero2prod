@@ -57,16 +57,16 @@ export class CodePipelineStack extends cdk.Stack {
       output: codeBuildOutput,
     });
 
-    // const codeDeployStage = this.codeDeployStage({
-    //   ecsService,
-    //   albListener,
-    //   targetGroupBlue,
-    //   targetGroupGreen,
-    //   codeBuildOutput,
-    // });
+    const codeDeployStage = this.codeDeployStage({
+      ecsService,
+      albListener,
+      targetGroupBlue,
+      targetGroupGreen,
+      codeBuildOutput,
+    });
 
     new pipeline.Pipeline(this, 'Pipeline', {
-      stages: [codeSourceStage, codeBuildStage],
+      stages: [codeSourceStage, codeBuildStage, codeDeployStage],
     });
   }
 
