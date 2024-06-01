@@ -130,7 +130,7 @@ export class CodePipelineStack extends cdk.Stack {
           TASK_DEF_DB_PASSWORD: { value: `${rdsProps.credentials.secret?.secretArn}:password` },
         },
       },
-      buildSpec: codebuild.BuildSpec.fromSourceFilename('aws_infra/buildspec.yaml'),
+      buildSpec: codebuild.BuildSpec.fromSourceFilename('infra/buildspec.yaml'),
     });
 
     codeBuildProject.addToRolePolicy(
