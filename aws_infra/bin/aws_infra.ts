@@ -80,15 +80,18 @@ const codeSourceStack = new CodeSourceStack(app, stackId(scope, 'CodeSourceStack
   config: config.codeSource,
 });
 
-const codeBuildStack = new CodeBuildStack(app, stackId(scope, 'CodeBuildStack'), {
-  env,
-  sourceOutput: codeSourceStack.output,
-  repository: ecrStack.repository,
-  taskDefinitionArn: ecsStack.taskDefinitionArn,
-});
+// TODO current implementation creates cyclic dependency with CodePipelineStack
+// const codeBuildStack = new CodeBuildStack(app, stackId(scope, 'CodeBuildStack'), {
+//   env,
+//   sourceOutput: codeSourceStack.output,
+//   repository: ecrStack.repository,
+//   taskDefinitionArn: ecsStack.taskDefinitionArn,
+// });
 
 const codePipelineStack = new CodePipelineStack(app, stackId(scope, 'CodePipelineStack'), {
   env,
   codeSourceAction: codeSourceStack.action,
-  codeBuildAction: codeBuildStack.action,
+  codeSourceOutput: codeSourceStack.output,
+  repository: ecrStack.repository,
+  taskDefinitionArn: ecsStack.taskDefinitionArn,
 });
