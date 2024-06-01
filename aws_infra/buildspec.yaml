@@ -44,7 +44,7 @@ phases:
         --build-arg BUILDKIT_INLINE_CACHE=1 \
         --progress=plain \
         --tag $IMAGE_REPO_NAME:latest \
-        --file aws.Dockerfile .
+        --file Dockerfile .
       - |
         docker tag \
         $IMAGE_REPO_NAME:latest \
