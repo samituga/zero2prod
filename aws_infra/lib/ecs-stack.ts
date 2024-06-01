@@ -60,7 +60,7 @@ export class EcsStack extends cdk.Stack {
         APP_DATABASE__DATABASE_NAME: rdsProps.databaseName,
       },
       secrets: {
-        APP_DATABASE__PASSWORD: ecs.Secret.fromSecretsManager(rdsProps.credentials.secret!),
+        APP_DATABASE__PASSWORD: ecs.Secret.fromSecretsManager(rdsProps.credentials.secret!, 'password'),
       },
     });
 
