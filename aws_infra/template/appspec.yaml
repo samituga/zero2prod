@@ -5,5 +5,5 @@ Resources:
       Properties:
         TaskDefinition: "<TASK_DEF_ARN>"
         LoadBalancerInfo:
-          ContainerName: "ecs-service-container"
+          ContainerName: "TaskContainer"
           ContainerPort: <TASK_DEF_CONTAINER_PORT>
