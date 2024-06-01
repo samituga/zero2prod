@@ -51,7 +51,7 @@ export interface BaseHealthCheckConfig {
 }
 
 export interface TaskDefHealthCheckConfig extends BaseHealthCheckConfig {
-  command: string[];
+  command: string ;
   startPeriodSec: number;
 }
 

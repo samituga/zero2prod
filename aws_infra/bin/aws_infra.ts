@@ -76,6 +76,12 @@ const ecsStack = new EcsStack(app, stackId(scope, 'EcsStack'), {
 const codePipelineStack = new CodePipelineStack(app, stackId(scope, 'CodePipelineStack'), {
   env,
   config: config.codePipeline,
+  taskDefConfig: config.ecs.taskDefConfig,
   repository: ecrStack.repository,
-  taskDefinitionArn: ecsStack.taskDefinitionArn,
+  rdsProps: rdsStack.dbProps,
+  taskDefinition: ecsStack.taskDefinition,
+  ecsService: ecsStack.ecsService,
+  albListener: albStack.listener80,
+  targetGroupBlue: albStack.targetGroupBlue,
+  targetGroupGreen: albStack.targetGroupGreen,
 });

@@ -19,7 +19,7 @@ interface EcsStackProps extends cdk.StackProps {
 export class EcsStack extends cdk.Stack {
   public readonly ecsCluster: ecs.Cluster;
   public readonly ecsService: ecs.FargateService;
-  public readonly taskDefinitionArn: string;
+  public readonly taskDefinition: ecs.FargateTaskDefinition;
 
   constructor(scope: Construct, id: string, props: EcsStackProps) {
     super(scope, id, props);
@@ -33,15 +33,15 @@ export class EcsStack extends cdk.Stack {
     const taskDefConfig = config.taskDefConfig;
     const healthCheckConfig = taskDefConfig.healthCheck;
 
-    const taskDefinition = new ecs.FargateTaskDefinition(this, 'TaskDef');
-    taskDefinition.addContainer('TaskContainer', {
+    this.taskDefinition = new ecs.FargateTaskDefinition(this, 'TaskDef');
+    this.taskDefinition.addContainer('TaskContainer', {
       image: ecs.ContainerImage.fromEcrRepository(repository, taskDefConfig.imageTag),
       essential: true,
       memoryLimitMiB: taskDefConfig.memoryLimitMiB,
       cpu: taskDefConfig.cpu,
       logging: new ecs.AwsLogDriver({ streamPrefix: 'EventDemo', mode: ecs.AwsLogDriverMode.NON_BLOCKING }),
       healthCheck: {
-        command: healthCheckConfig.command,
+        command: ['CMD-SHELL', healthCheckConfig.command],
         interval: cdk.Duration.seconds(healthCheckConfig.intervalSec),
         retries: healthCheckConfig.unhealthyThresholdCount,
         timeout: cdk.Duration.seconds(healthCheckConfig.timeoutSec),
@@ -64,13 +64,11 @@ export class EcsStack extends cdk.Stack {
       },
     });
 
-    this.taskDefinitionArn = taskDefinition.taskDefinitionArn;
-
     this.ecsService = new ecs.FargateService(this, 'FargateService', {
       cluster: this.ecsCluster,
       desiredCount: config.desiredCount,
       deploymentController: { type: ecs.DeploymentControllerType.CODE_DEPLOY },
-      taskDefinition,
+      taskDefinition: this.taskDefinition,
       assignPublicIp: true,
       securityGroups: [sg],
     });

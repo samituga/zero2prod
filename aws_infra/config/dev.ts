@@ -49,10 +49,7 @@ const ecs: EcsConfig = {
     cpu: 256,
     containerPort,
     healthCheck: {
-      command: [
-        'CMD-SHELL',
-        `wget --no-verbose --tries=1 http://localhost:${containerPort}${healthCheckPath} || exit 1`,
-      ],
+      command: `wget --no-verbose --tries=1 http://localhost:${containerPort}${healthCheckPath} || exit 1`,
       intervalSec: 30,
       timeoutSec: 2,
       unhealthyThresholdCount: 4,
