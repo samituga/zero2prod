@@ -95,9 +95,6 @@ export class CodePipelineStack extends cdk.Stack {
   private codeBuildStage(props: CodeBuildProps): pipeline.StageProps {
     const { taskDefConfig, repository, rdsProps, taskDefinition, codeSourceOutput, output } = props;
 
-    console.log("\n\n\ntaskdef\n\n\n");
-    console.log(taskDefinition.toString());
-
     const codeBuildProject = new codebuild.PipelineProject(this, 'CodeBuildProject', {
       cache: codebuild.Cache.local(codebuild.LocalCacheMode.DOCKER_LAYER),
       environment: {

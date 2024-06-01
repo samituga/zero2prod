@@ -59,8 +59,8 @@ phases:
       - printf '[{"name":"rust-server","imageUri":"%s"}]' $REPOSITORY_URI:latest > imagedefinitions.json
       - echo Generating AppSpec file...
       - ./scripts/generate_from_template.sh aws_infra/template/appspec.yaml
-      - echo Generating Empty taskdef.json file...
-      - touch taskdef.json
+      - echo Generating TaskDef file...
+      - ./scripts/generate_from_template.sh aws_infra/template/taskdef.json
 
 
 artifacts:
