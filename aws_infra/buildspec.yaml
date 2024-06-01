@@ -62,7 +62,6 @@ phases:
       - echo Generating TaskDef file...
       - ./scripts/generate_from_template.sh aws_infra/template/taskdef.json
 
-
 artifacts:
   files:
     - imagedefinitions.json

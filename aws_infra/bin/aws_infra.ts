@@ -4,12 +4,12 @@ import 'source-map-support/register';
 import { getConfig, isScope, stackId } from '../config/helper';
 import { Scope } from '../config/type';
 import { AlbStack } from '../lib/alb-stack';
+import { CodePipelineStack } from '../lib/code-pipeline-stack';
 import { EcrStack } from '../lib/ecr-stack';
 import { EcsStack } from '../lib/ecs-stack';
 import { RdsStack } from '../lib/rds-stack';
 import { SgStack } from '../lib/sg-stack';
 import { VpcStack } from '../lib/vpc-stack';
-import { CodePipelineStack } from '../lib/code-pipeline-stack';
 
 const envScope = process.env.CDK_DEPLOY_SCOPE;
 
