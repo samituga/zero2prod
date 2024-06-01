@@ -5,5 +5,5 @@ Resources:
       Properties:
         TaskDefinition: "<TASK_DEF_ARN>"
         LoadBalancerInfo:
-          ContainerName: "TaskContainer"
+          ContainerName: "<TASK_DEF_CONTAINER_NAME>"
           ContainerPort: <TASK_DEF_CONTAINER_PORT>

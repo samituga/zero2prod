@@ -80,6 +80,7 @@ Consider running everything in a single job
 
 TODO Infra
 Just by adding a new dependency the cache does not work as expected, it downloads and compiles all dependencies
-Configure AWS CodeDeploy
-Configure AWS secret manager for secret env vars like DB password
-Use HCP vault for secrets
+For some reason CodeDeploy needs a taskdef.json with the taskdefinition configurations, this possibly creates problems
+as there is a need to duplicate the code from the EcsStack, but that taskdef.json isn't even used, in the end it uses
+the taskdef specified in the appspec.yaml `TaskDefinition: "<TASK_DEF_ARN>"`, but without a valid taskdef.json it doesn't
+work
