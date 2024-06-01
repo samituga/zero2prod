@@ -95,6 +95,9 @@ export class CodePipelineStack extends cdk.Stack {
   private codeBuildStage(props: CodeBuildProps): pipeline.StageProps {
     const { taskDefConfig, repository, rdsProps, taskDefinition, codeSourceOutput, output } = props;
 
+    console.log("\n\n\ntaskdef\n\n\n");
+    console.log(taskDefinition.toString());
+
     const codeBuildProject = new codebuild.PipelineProject(this, 'CodeBuildProject', {
       cache: codebuild.Cache.local(codebuild.LocalCacheMode.DOCKER_LAYER),
       environment: {
@@ -112,9 +115,9 @@ export class CodePipelineStack extends cdk.Stack {
 
           TASK_DEF_FAMILY: { value: taskDefinition.family },
 
-          TASK_DEF_MEM_LIMIT_MIB: { value: taskDefConfig.memoryLimitMiB },
-          TASK_DEF_CPU: { value: taskDefConfig.cpu },
-          TASK_DEF_CONTAINER_PORT: { value: taskDefConfig.containerPort },
+          TASK_DEF_MEM_LIMIT_MIB: { value: "2048" },
+          TASK_DEF_CPU: { value: "1024" },
+          TASK_DEF_CONTAINER_PORT: { value: 9999 },
 
           TASK_DEF_HC_COMMAND: { value: taskDefConfig.healthCheck.command },
           TASK_DEF_HC_INTERVAL: { value: taskDefConfig.healthCheck.intervalSec },
