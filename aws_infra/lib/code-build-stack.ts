@@ -20,7 +20,7 @@ export class CodeBuildStack extends cdk.Stack {
 
     const { sourceOutput, repository, taskDefinitionArn } = props;
 
-    const project = new codebuild.Project(this, 'CodeBuildProject', {
+    const project = new codebuild.PipelineProject(this, 'CodeBuildProject', {
       cache: codebuild.Cache.local(codebuild.LocalCacheMode.DOCKER_LAYER),
       environment: {
         buildImage: codebuild.LinuxBuildImage.STANDARD_7_0,
