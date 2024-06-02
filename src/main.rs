@@ -13,9 +13,10 @@ async fn main() -> Result<(), std::io::Error> {
 
     let configuration = get_configuration().expect("Failed to read configuration.");
 
-    // TODO use connect instead of connect_lazy
-    let connection_pool =
-        PgPoolOptions::new().connect_lazy_with(configuration.database.with_db_name());
+    let connection_pool = PgPoolOptions::new()
+        .connect_with(configuration.database.with_db_name())
+        .await
+        .expect("Failed to connect to the database");
 
     sqlx::migrate!("./migrations")
         .run(&connection_pool)
