@@ -1,3 +1,8 @@
+use crate::domain::SubscriberEmail;
+use aws_config::{BehaviorVersion, Region};
+use aws_sdk_sesv2::config::Credentials;
+use aws_sdk_sesv2::Client;
+use dotenv::dotenv;
 use secrecy::{ExposeSecret, Secret};
 use serde_aux::field_attributes::deserialize_number_from_string;
 use sqlx::postgres::{PgConnectOptions, PgSslMode};
@@ -7,6 +12,8 @@ use sqlx::ConnectOptions;
 pub struct Settings {
     pub application: ApplicationSettings,
     pub database: DatabaseSettings,
+    pub aws: AwsSettings,
+    pub email_client: EmailClientSettings,
 }
 
 #[derive(serde::Deserialize)]
@@ -49,6 +56,41 @@ impl DatabaseSettings {
     }
 }
 
+#[derive(serde::Deserialize)]
+pub struct AwsSettings {
+    region: String,
+    access_key_id: String,
+    secret_access_key: Secret<String>,
+}
+
+impl AwsSettings {
+    pub async fn ses_client(&self) -> Client {
+        let config = aws_config::defaults(BehaviorVersion::v2024_03_28())
+            .credentials_provider(Credentials::new(
+                &self.access_key_id,
+                self.secret_access_key.expose_secret(),
+                None,
+                None,
+                "manual",
+            ))
+            .region(Region::new(self.region.clone())) // TODO clone
+            .load()
+            .await;
+        Client::new(&config)
+    }
+}
+
+#[derive(serde::Deserialize)]
+pub struct EmailClientSettings {
+    pub sender_email: String,
+}
+
+impl EmailClientSettings {
+    pub fn sender(&self) -> Result<SubscriberEmail, String> {
+        SubscriberEmail::parse(self.sender_email.clone())
+    }
+}
+
 pub fn get_configuration() -> Result<Settings, config::ConfigError> {
     let base_path = std::env::current_dir().expect("Failed to determine the current directory");
     let configuration_directory = base_path.join("configuration");
@@ -57,6 +99,10 @@ pub fn get_configuration() -> Result<Settings, config::ConfigError> {
         .unwrap_or_else(|_| "local".into())
         .try_into()
         .expect("Failed to parse APP_ENVIRONMENT.");
+
+    if environment != Environment::Production {
+        dotenv().ok();
+    }
 
     let environment_filename = format!("{}.toml", environment.as_str());
 
@@ -77,6 +123,7 @@ pub fn get_configuration() -> Result<Settings, config::ConfigError> {
     settings.try_deserialize::<Settings>()
 }
 
+#[derive(PartialEq)]
 pub enum Environment {
     Local,
     Production,

@@ -7,3 +7,9 @@ port = 5432
 username = "postgres"
 password = "password"
 database_name = "newsletter"
+
+[aws]
+region = "eu-west-1"
+
+[email_client]
+sender_email = "newsteller@avada7.com"
