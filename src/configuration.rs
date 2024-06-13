@@ -2,7 +2,7 @@ use crate::domain::SubscriberEmail;
 use aws_config::{BehaviorVersion, Region};
 use aws_sdk_sesv2::config::Credentials;
 use aws_sdk_sesv2::Client;
-use dotenv::dotenv;
+use dotenvy::dotenv;
 use secrecy::{ExposeSecret, Secret};
 use serde_aux::field_attributes::deserialize_number_from_string;
 use sqlx::postgres::{PgConnectOptions, PgSslMode};
