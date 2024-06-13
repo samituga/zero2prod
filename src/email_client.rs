@@ -105,10 +105,11 @@ fn build_content(c: &str) -> Content {
 
 #[cfg(test)]
 mod tests {
-    use aws_sdk_sesv2::operation::send_email::SendEmailOutput;
+    use aws_sdk_sesv2::operation::send_email::{SendEmailError, SendEmailOutput};
+    use aws_sdk_sesv2::types::error::BadRequestException;
     use aws_sdk_sesv2::Client;
     use aws_smithy_mocks_experimental::{mock, mock_client, RuleMode};
-    use claims::assert_ok;
+    use claims::{assert_err, assert_ok};
     use fake::faker::internet::en::SafeEmail;
     use fake::faker::lorem::en::Paragraph;
     use fake::Fake;
@@ -142,7 +143,6 @@ mod tests {
             });
 
         let client = mock_client!(aws_sdk_sesv2, RuleMode::Sequential, &[&mock_send_email]);
-
         let aws_email_client = AwsSesEmailSender::new(client);
 
         // Act
@@ -158,5 +158,45 @@ mod tests {
 
         // Assert
         assert_ok!(result);
+    }
+
+    #[tokio::test]
+    async fn send_email_fails_if_client_returns_err() {
+        // Arrange
+        let sender_email = SubscriberEmail::parse(SafeEmail().fake::<String>()).unwrap();
+        let recipient_email = SubscriberEmail::parse(SafeEmail().fake::<String>()).unwrap();
+        let subject = Paragraph(1..10).fake::<String>();
+        let text_content = Paragraph(1..10).fake::<String>();
+        let html_content = format!("<p>{}</p>", text_content);
+
+        let recipient_email_string = recipient_email.as_ref().to_string();
+
+        let mock_send_email = mock!(Client::send_email)
+            .match_requests(move |req| {
+                req.destination()
+                    .unwrap()
+                    .to_addresses()
+                    .contains(&recipient_email_string)
+            })
+            .then_error(|| {
+                SendEmailError::BadRequestException(BadRequestException::builder().build())
+            });
+
+        let client = mock_client!(aws_sdk_sesv2, RuleMode::Sequential, &[&mock_send_email]);
+        let aws_email_client = AwsSesEmailSender::new(client);
+
+        // Act
+        let result = aws_email_client
+            .send_email(
+                &sender_email,
+                &recipient_email,
+                &subject,
+                &text_content,
+                &html_content,
+            )
+            .await;
+
+        // Assert
+        assert_err!(result);
     }
 }
