@@ -11,6 +11,8 @@ env:
   SQLX_VERSION: 0.7.1
   SQLX_FEATURES: "rustls,postgres"
   DATABASE_URL: "postgres://postgres:password@localhost:5432/newsletter"
+  APP_AWS__ACCESS_KEY_ID: "dummy"
+  APP_AWS__SECRET_ACCESS_KEY: "dummy"
 
 jobs:
   coverage:
