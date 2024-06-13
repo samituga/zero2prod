@@ -10,6 +10,10 @@ database_name = "newsletter"
 
 [aws]
 region = "eu-west-1"
+operation_timeout_secs = 7
+operation_attempt_timeout_secs = 7
+read_timeout_secs = 7
+connect_timeout_secs = 7
 
 [email_client]
 sender_email = "newsteller@avada7.com"

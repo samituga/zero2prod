@@ -1,4 +1,6 @@
-use crate::domain::SubscriberEmail;
+use std::time::Duration;
+
+use aws_config::timeout::TimeoutConfig;
 use aws_config::{BehaviorVersion, Region};
 use aws_sdk_sesv2::config::Credentials;
 use aws_sdk_sesv2::Client;
@@ -7,6 +9,8 @@ use secrecy::{ExposeSecret, Secret};
 use serde_aux::field_attributes::deserialize_number_from_string;
 use sqlx::postgres::{PgConnectOptions, PgSslMode};
 use sqlx::ConnectOptions;
+
+use crate::domain::SubscriberEmail;
 
 #[derive(serde::Deserialize)]
 pub struct Settings {
@@ -61,10 +65,23 @@ pub struct AwsSettings {
     region: String,
     access_key_id: String,
     secret_access_key: Secret<String>,
+
+    // TODO SES Client configurations
+    operation_timeout_secs: u64,
+    operation_attempt_timeout_secs: u64,
+    read_timeout_secs: u64,
+    connect_timeout_secs: u64,
 }
 
 impl AwsSettings {
     pub async fn ses_client(&self) -> Client {
+        let timeout_config = TimeoutConfig::builder()
+            .operation_timeout(Duration::from_secs(self.operation_timeout_secs))
+            .operation_attempt_timeout(Duration::from_secs(self.operation_attempt_timeout_secs))
+            .read_timeout(Duration::from_secs(self.read_timeout_secs))
+            .connect_timeout(Duration::from_secs(self.connect_timeout_secs))
+            .build();
+
         let config = aws_config::defaults(BehaviorVersion::v2024_03_28())
             .credentials_provider(Credentials::new(
                 &self.access_key_id,
@@ -73,7 +90,8 @@ impl AwsSettings {
                 None,
                 "manual",
             ))
-            .region(Region::new(self.region.clone())) // TODO clone
+            .region(Region::new(self.region.clone())) // TODO fix clone?
+            .timeout_config(timeout_config)
             .load()
             .await;
         Client::new(&config)
