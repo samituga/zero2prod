@@ -7,11 +7,11 @@ phases:
       - echo Logging in to Amazon ECR...
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $REPOSITORY_URI
       - |
-        if ! aws ecr describe-images --repository-name $IMAGE_REPO_NAME --image-ids imageTag=latest-rust-1.78.0 --region $AWS_DEFAULT_REGION; then
+        if ! aws ecr describe-images --repository-name $IMAGE_REPO_NAME --image-ids imageTag=latest-rust-1.81.0 --region $AWS_DEFAULT_REGION; then
           echo "Image not found in ECR, pulling from Docker Hub and pushing to ECR..."
-          docker pull lukemathwalker/cargo-chef:latest-rust-1.78.0
-          docker tag lukemathwalker/cargo-chef:latest-rust-1.78.0 $REPOSITORY_URI:latest-rust-1.78.0
-          docker push $REPOSITORY_URI:latest-rust-1.78.0
+          docker pull lukemathwalker/cargo-chef:latest-rust-1.81.0
+          docker tag lukemathwalker/cargo-chef:latest-rust-1.81.0 $REPOSITORY_URI:latest-rust-1.81.0
+          docker push $REPOSITORY_URI:latest-rust-1.81.0
         else
           echo "Image found in ECR."
         fi
@@ -26,7 +26,7 @@ phases:
         --progress=plain \
         --target depbuilder \
         --cache-from $REPOSITORY_URI:depbuilder \
-        --build-arg CARGO_CHEF_IMAGE=$REPOSITORY_URI:latest-rust-1.78.0 \
+        --build-arg CARGO_CHEF_IMAGE=$REPOSITORY_URI:latest-rust-1.81.0 \
         --build-arg RUNTIME_IMAGE=public.ecr.aws/debian/debian:bookworm-slim \
         --build-arg BUILDKIT_INLINE_CACHE=1 \
         --tag $IMAGE_REPO_NAME:depbuilder \
@@ -40,7 +40,7 @@ phases:
         docker build \
         --cache-from $REPOSITORY_URI:depbuilder \
         --cache-from $REPOSITORY_URI:latest \
-        --build-arg CARGO_CHEF_IMAGE=$REPOSITORY_URI:latest-rust-1.78.0 \
+        --build-arg CARGO_CHEF_IMAGE=$REPOSITORY_URI:latest-rust-1.81.0 \
         --build-arg BUILDKIT_INLINE_CACHE=1 \
         --progress=plain \
         --tag $IMAGE_REPO_NAME:latest \

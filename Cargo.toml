@@ -2,7 +2,7 @@
 name = "zero2prod"
 version = "0.1.0"
 edition = "2021"
-rust-version = "1.78"
+rust-version = "1.81"
 
 [lib]
 path = "src/lib.rs"
@@ -33,7 +33,7 @@ tracing-log = "0.2.0"
 tracing-subscriber = { version = "0.3.18", features = ["registry", "env-filter"] }
 unicode-segmentation = "1.11.0"
 uuid = { version = "1.8.0", features = ["v4"] }
-validator = "0.16.1"
+validator = "0.18.0"
 
 [dependencies.sqlx]
 version = "0.7.4"

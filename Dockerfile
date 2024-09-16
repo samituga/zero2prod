@@ -1,4 +1,4 @@
-ARG CARGO_CHEF_IMAGE=lukemathwalker/cargo-chef:latest-rust-1.78.0
+ARG CARGO_CHEF_IMAGE=lukemathwalker/cargo-chef:latest-rust-1.81.0
 ARG RUNTIME_IMAGE=debian:bookworm-slim
 
 FROM ${CARGO_CHEF_IMAGE} as chef
