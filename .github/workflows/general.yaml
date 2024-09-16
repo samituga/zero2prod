@@ -9,6 +9,9 @@ env:
   DATABASE_URL: "postgres://postgres:password@localhost:5432/newsletter"
   APP_AWS__ACCESS_KEY_ID: "dummy"
   APP_AWS__SECRET_ACCESS_KEY: "dummy"
+  APP_USER: app
+  APP_USER_PWD: secret
+  APP_DB_NAME: newsletter
 
 jobs:
   test:
@@ -42,6 +45,16 @@ jobs:
           --features ${{ env.SQLX_FEATURES }}
           --no-default-features
           --locked
+
+      - name: Create app user in Postgres
+        run: |
+          sudo apt-get install postgresql-client
+          # Create the application user
+          CREATE_QUERY="CREATE USER ${APP_USER} WITH PASSWORD '${APP_USER_PWD}';"
+          PGPASSWORD="password" psql -U "postgres" -h "localhost" -c "${CREATE_QUERY}"
+          # Grant create db privileges to the app user
+          GRANT_QUERY="ALTER USER ${APP_USER} CREATEDB;"
+          PGPASSWORD="password" psql -U "postgres" -h "localhost" -c "${GRANT_QUERY}"
 
       - name: Migrate database
         run: SKIP_DOCKER=true ./scripts/init_db.sh
@@ -90,6 +103,16 @@ jobs:
           --features ${{ env.SQLX_FEATURES }}
           --no-default-features
           --locked
+
+      - name: Create app user in Postgres
+        run: |
+          sudo apt-get install postgresql-client
+          # Create the application user
+          CREATE_QUERY="CREATE USER ${APP_USER} WITH PASSWORD '${APP_USER_PWD}';"
+          PGPASSWORD="password" psql -U "postgres" -h "localhost" -c "${CREATE_QUERY}"
+          # Grant create db privileges to the app user
+          GRANT_QUERY="ALTER USER ${APP_USER} CREATEDB;"
+          PGPASSWORD="password" psql -U "postgres" -h "localhost" -c "${GRANT_QUERY}"
 
       - name: Migrate database
         run: SKIP_DOCKER=true ./scripts/init_db.sh
