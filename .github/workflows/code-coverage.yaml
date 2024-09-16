@@ -36,10 +36,10 @@ jobs:
         with:
           components: llvm-tools-preview
 
-      #      - name: Cache Docker images
-      #        uses: ScribeMD/docker-cache@0.5.0
-      #        with:
-      #          key: docker-${{ runner.os }}-${{ hashFiles('scripts/init_db.sh') }}
+      - name: Cache Docker images
+        uses: ScribeMD/docker-cache@0.5.0
+        with:
+          key: docker-${{ runner.os }}-${{ hashFiles('scripts/init_db.sh') }}
 
       - name: Install sqlx-cli
         run:

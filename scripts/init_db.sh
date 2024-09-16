@@ -6,16 +6,17 @@ if ! [ -x "$(command -v sqlx)" ]; then
   echo >&2 "Error: sqlx is not installed."
   echo >&2 "Use:"
   echo >&2 " cargo install --version='~0.8' sqlx-cli \
---no-default-features --features rustls,postgres"
+            --no-default-features --features rustls,postgres"
   echo >&2 "to install it."
   exit 1
 fi
 
-DB_USER="${POSTGRES_USER:=postgres}"
-DB_PASSWORD="${POSTGRES_PASSWORD:=password}"
-DB_NAME="${POSTGRES_DB:=newsletter}"
-DB_PORT="${POSTGRES_PORT:=5432}"
-DB_HOST="${POSTGRES_HOST:=localhost}"
+DB_PORT="${DB_PORT:=5432}"
+SUPERUSER="${SUPERUSER:=postgres}"
+SUPERUSER_PWD="${SUPERUSER_PWD:=password}"
+APP_USER="${APP_USER:=app}"
+APP_USER_PWD="${APP_USER_PWD:=secret}"
+APP_DB_NAME="${APP_DB_NAME:=newsletter}"
 
 # Allow to skip Docker if a dockerized Postgres database is already running
 if [[ -z "${SKIP_DOCKER}" ]]; then
@@ -29,21 +30,17 @@ if [[ -z "${SKIP_DOCKER}" ]]; then
   CONTAINER_NAME="postgres_$(date '+%s')"
   # Launch postgres using Docker
   docker run \
-      -e POSTGRES_USER="${DB_USER}" \
-      -e POSTGRES_PASSWORD="${DB_PASSWORD}" \
-      -e POSTGRES_DB="${DB_NAME}" \
-      --health-cmd="pg_isready -U ${DB_USER} || exit 1" \
+      --env POSTGRES_USER="${SUPERUSER}" \
+      --env POSTGRES_PASSWORD="${SUPERUSER_PWD}" \
+      --health-cmd="pg_isready -U ${SUPERUSER} || exit 1" \
       --health-interval=1s \
       --health-timeout=5s \
       --health-retries=5 \
-      -p "${DB_PORT}":5432 \
-      -d \
+      --publish "${DB_PORT}":5432 \
+      --detach \
       --name "${CONTAINER_NAME}" \
-      postgres -N 1000
+      postgres:16.2 -N 1000
       # ^ Increased maximum number of connections for testing purposes
-
-
-export PGPASSWORD="${DB_PASSWORD}"
 
   until [ \
     "$(docker inspect -f "{{.State.Health.Status}}" "${CONTAINER_NAME}")" == \
@@ -52,11 +49,19 @@ export PGPASSWORD="${DB_PASSWORD}"
     >&2 echo "Postgres is still unavailable - sleeping"
     sleep 1
   done
+
+    # Create the application user
+    CREATE_QUERY="CREATE USER ${APP_USER} WITH PASSWORD '${APP_USER_PWD}';"
+    docker exec -it "${CONTAINER_NAME}" psql -U "${SUPERUSER}" -c "${CREATE_QUERY}"
+
+    # Grant superuser privileges to the app user
+    GRANT_QUERY="ALTER USER ${APP_USER} WITH SUPERUSER;"
+    docker exec -it "${CONTAINER_NAME}" psql -U "${SUPERUSER}" -c "${GRANT_QUERY}"
 fi
 
 echo >&2 "Postgres is up and running on port ${DB_PORT} - running migrations now!"
 
-DATABASE_URL=postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}
+DATABASE_URL=postgres://${APP_USER}:${APP_USER_PWD}@localhost:${DB_PORT}/${APP_DB_NAME}
 export DATABASE_URL
 
 sqlx database create

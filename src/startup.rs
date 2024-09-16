@@ -74,5 +74,5 @@ pub fn run(
 
 pub fn get_connection_pool(configuration: &DatabaseSettings) -> PgPool {
     // TODO Eager connection?
-    PgPoolOptions::new().connect_lazy_with(configuration.with_db_name())
+    PgPoolOptions::new().connect_lazy_with(configuration.connect_options())
 }

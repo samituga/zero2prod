@@ -39,12 +39,7 @@ pub struct DatabaseSettings {
 }
 
 impl DatabaseSettings {
-    pub fn with_db_name(&self) -> PgConnectOptions {
-        let options = self.without_db_name().database(&self.database_name);
-        options.log_statements(log::LevelFilter::Trace)
-    }
-
-    pub fn without_db_name(&self) -> PgConnectOptions {
+    pub fn connect_options(&self) -> PgConnectOptions {
         let ssl_mode = if self.require_ssl {
             PgSslMode::Require
         } else {
@@ -57,6 +52,8 @@ impl DatabaseSettings {
             .password(self.password.expose_secret())
             .port(self.port)
             .ssl_mode(ssl_mode)
+            .database(&self.database_name)
+            .log_statements(log::LevelFilter::Trace)
     }
 }
 
