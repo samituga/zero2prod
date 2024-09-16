@@ -48,7 +48,7 @@ We use this command locally to save the results so that we don't need a live con
 We will need the env variable `SQLX_OFFLINE=true` to use the offline data
 
 ```shell
-cargo sqlx prepare --workspace
+cargo sqlx prepare --workspace -- --all-targets
 ```
 
 Run pre commit validations to all files (runs automatically before each commit but only for changed files)
