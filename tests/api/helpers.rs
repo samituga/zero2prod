@@ -1,5 +1,5 @@
-use std::sync::LazyLock;
 use sqlx::{Connection, Executor, PgConnection, PgPool};
+use std::sync::LazyLock;
 use uuid::Uuid;
 
 use zero2prod::configuration::{get_configuration, DatabaseSettings};
