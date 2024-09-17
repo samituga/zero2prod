@@ -51,12 +51,19 @@ if [[ -z "${SKIP_DOCKER}" ]]; then
   done
 
     # Create the application user
-    CREATE_QUERY="CREATE USER ${APP_USER} WITH PASSWORD '${APP_USER_PWD}';"
+    CREATE_QUERY="CREATE USER ${APP_USER} WITH ENCRYPTED PASSWORD '${APP_USER_PWD}';"
     docker exec -it "${CONTAINER_NAME}" psql -U "${SUPERUSER}" -c "${CREATE_QUERY}"
 
     # Grant superuser privileges to the app user
     GRANT_QUERY="ALTER USER ${APP_USER} WITH SUPERUSER;"
     docker exec -it "${CONTAINER_NAME}" psql -U "${SUPERUSER}" -c "${GRANT_QUERY}"
+
+    # Use the app user to create the database
+    CREATE_DB_QUERY="CREATE DATABASE ${APP_DB_NAME};"
+    docker exec -it "${CONTAINER_NAME}" psql -U "${SUPERUSER}" -c "${CREATE_DB_QUERY}"
+
+    ALTER_OWNER_QUERY="ALTER DATABASE ${APP_DB_NAME} OWNER TO ${APP_USER};"
+    docker exec -it "${CONTAINER_NAME}" psql -U "${SUPERUSER}" -c "${ALTER_OWNER_QUERY}"
 fi
 
 echo >&2 "Postgres is up and running on port ${DB_PORT} - running migrations now!"

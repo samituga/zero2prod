@@ -1,5 +1,5 @@
 -- Add migration script here
-CREATE TABLE app.subscriptions
+CREATE TABLE subscriptions
 (
     id            uuid        NOT NULL,
     PRIMARY KEY (id),
