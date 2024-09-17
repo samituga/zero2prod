@@ -49,12 +49,18 @@ jobs:
       - name: Create app user in Postgres
         run: |
           sudo apt-get install postgresql-client
+
           # Create the application user
           CREATE_QUERY="CREATE USER ${APP_USER} WITH PASSWORD '${APP_USER_PWD}';"
           PGPASSWORD="password" psql -U "postgres" -h "localhost" -c "${CREATE_QUERY}"
+
           # Grant create db privileges to the app user
           GRANT_QUERY="ALTER USER ${APP_USER} CREATEDB;"
           PGPASSWORD="password" psql -U "postgres" -h "localhost" -c "${GRANT_QUERY}"
+
+          # Change ownership of the database to the app user
+          ALTER_OWNER_QUERY="ALTER DATABASE ${APP_DB_NAME} OWNER TO ${APP_USER};"
+          PGPASSWORD="password" psql -U "postgres" -h "localhost" -c "${ALTER_OWNER_QUERY}"
 
       - name: Migrate database
         run: SKIP_DOCKER=true ./scripts/init_db.sh
@@ -107,12 +113,18 @@ jobs:
       - name: Create app user in Postgres
         run: |
           sudo apt-get install postgresql-client
+
           # Create the application user
           CREATE_QUERY="CREATE USER ${APP_USER} WITH PASSWORD '${APP_USER_PWD}';"
           PGPASSWORD="password" psql -U "postgres" -h "localhost" -c "${CREATE_QUERY}"
+
           # Grant create db privileges to the app user
           GRANT_QUERY="ALTER USER ${APP_USER} CREATEDB;"
           PGPASSWORD="password" psql -U "postgres" -h "localhost" -c "${GRANT_QUERY}"
+
+          # Change ownership of the database to the app user
+          ALTER_OWNER_QUERY="ALTER DATABASE ${APP_DB_NAME} OWNER TO ${APP_USER};"
+          PGPASSWORD="password" psql -U "postgres" -h "localhost" -c "${ALTER_OWNER_QUERY}"
 
       - name: Migrate database
         run: SKIP_DOCKER=true ./scripts/init_db.sh
