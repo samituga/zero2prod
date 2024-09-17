@@ -22,7 +22,7 @@ impl TryFrom<FormData> for NewSubscriber {
 }
 
 #[tracing::instrument(
-    name = "Adding a new subscriber REMOVE",
+    name = "Adding a new subscriber",
     skip(form, pool),
     fields(
         subscriber_email = %form.email,
