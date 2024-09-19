@@ -1,7 +1,13 @@
+use std::sync::Arc;
 use aws_sdk_sesv2::types::{Body, Content, Destination, EmailContent, Message};
 use aws_sdk_sesv2::Client;
 
 use crate::domain::SubscriberEmail;
+
+#[async_trait::async_trait]
+pub trait SesClientProvider {
+    async fn ses_client(&self) -> Client;
+}
 
 #[async_trait::async_trait]
 pub trait EmailSender {
@@ -16,12 +22,12 @@ pub trait EmailSender {
 }
 
 pub struct AwsSesEmailSender {
-    ses_client: Client,
+    ses_client_provider: Arc<dyn SesClientProvider + Send + Sync>,
 }
 
 impl AwsSesEmailSender {
-    pub fn new(ses_client: Client) -> Self {
-        Self { ses_client }
+    pub fn new(ses_client_provider: Arc<dyn SesClientProvider + Send + Sync>) -> Self {
+        Self { ses_client_provider }
     }
 }
 
@@ -35,6 +41,7 @@ impl EmailSender for AwsSesEmailSender {
         text_content: &str,
         html_content: &str,
     ) -> Result<(), String> {
+        let ses_client = self.ses_client_provider.ses_client().await;
         let destination = Destination::builder()
             .to_addresses(recipient_email.as_ref())
             .build();
@@ -51,8 +58,7 @@ impl EmailSender for AwsSesEmailSender {
 
         let email_content = EmailContent::builder().simple(message).build();
 
-        let result = self
-            .ses_client
+        let result = ses_client
             .send_email()
             .from_email_address(sender_email.as_ref())
             .destination(destination)
@@ -113,10 +119,22 @@ mod tests {
     use fake::faker::internet::en::SafeEmail;
     use fake::faker::lorem::en::Paragraph;
     use fake::Fake;
+    use std::sync::Arc;
     use tokio;
 
     use crate::domain::SubscriberEmail;
-    use crate::email_client::{AwsSesEmailSender, EmailSender};
+    use crate::email_client::{AwsSesEmailSender, EmailSender, SesClientProvider};
+
+    struct MockSesClientProvider {
+        client: Client,
+    }
+
+    #[async_trait::async_trait]
+    impl SesClientProvider for MockSesClientProvider {
+        async fn ses_client(&self) -> Client {
+            self.client.clone()
+        }
+    }
 
     #[tokio::test]
     async fn sends_email_with_correct_arguments() {
@@ -143,7 +161,8 @@ mod tests {
             });
 
         let client = mock_client!(aws_sdk_sesv2, RuleMode::Sequential, &[&mock_send_email]);
-        let aws_email_client = AwsSesEmailSender::new(client);
+        let mock_ses_client_provider = Arc::new(MockSesClientProvider { client });
+        let aws_email_client = AwsSesEmailSender::new(mock_ses_client_provider);
 
         // Act
         let result = aws_email_client
@@ -183,7 +202,8 @@ mod tests {
             });
 
         let client = mock_client!(aws_sdk_sesv2, RuleMode::Sequential, &[&mock_send_email]);
-        let aws_email_client = AwsSesEmailSender::new(client);
+        let mock_ses_client_provider = Arc::new(MockSesClientProvider { client });
+        let aws_email_client = AwsSesEmailSender::new(mock_ses_client_provider);
 
         // Act
         let result = aws_email_client

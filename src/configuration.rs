@@ -11,6 +11,7 @@ use sqlx::postgres::{PgConnectOptions, PgSslMode};
 use sqlx::ConnectOptions;
 
 use crate::domain::SubscriberEmail;
+use crate::email_client::SesClientProvider;
 
 #[derive(serde::Deserialize, Clone)]
 pub struct Settings {
@@ -70,8 +71,9 @@ pub struct AwsSettings {
     connect_timeout_secs: u64,
 }
 
-impl AwsSettings {
-    pub async fn ses_client(&self) -> Client {
+#[async_trait::async_trait]
+impl SesClientProvider for AwsSettings {
+    async fn ses_client(&self) -> Client {
         let timeout_config = TimeoutConfig::builder()
             .operation_timeout(Duration::from_secs(self.operation_timeout_secs))
             .operation_attempt_timeout(Duration::from_secs(self.operation_attempt_timeout_secs))

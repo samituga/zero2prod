@@ -1,5 +1,5 @@
 use std::net::TcpListener;
-
+use std::sync::Arc;
 use actix_web::dev::Server;
 use actix_web::{web, App, HttpServer};
 use sqlx::postgres::PgPoolOptions;
@@ -7,7 +7,7 @@ use sqlx::PgPool;
 use tracing_actix_web::TracingLogger;
 
 use crate::configuration::{DatabaseSettings, Settings};
-use crate::email_client::{AwsSesEmailSender, EmailService};
+use crate::email_client::{AwsSesEmailSender, EmailService, SesClientProvider};
 use crate::routes::{health_check, subscribe};
 
 pub struct Application {
@@ -24,7 +24,8 @@ impl Application {
             .await
             .expect("Failed to migrate the database");
 
-        let aws_ses_client = AwsSesEmailSender::new(configuration.aws.ses_client().await);
+        
+        let aws_ses_client = AwsSesEmailSender::new(Arc::new(configuration.aws));
         let sender_email = configuration
             .email_client
             .sender()
