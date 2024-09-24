@@ -1,6 +1,6 @@
-use std::sync::Arc;
 use aws_sdk_sesv2::types::{Body, Content, Destination, EmailContent, Message};
 use aws_sdk_sesv2::Client;
+use std::sync::Arc;
 
 use crate::domain::SubscriberEmail;
 
@@ -27,7 +27,9 @@ pub struct AwsSesEmailSender {
 
 impl AwsSesEmailSender {
     pub fn new(ses_client_provider: Arc<dyn SesClientProvider + Send + Sync>) -> Self {
-        Self { ses_client_provider }
+        Self {
+            ses_client_provider,
+        }
     }
 }
 
