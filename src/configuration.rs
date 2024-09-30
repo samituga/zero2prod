@@ -1,5 +1,8 @@
+use std::sync::Arc;
 use std::time::Duration;
 
+use crate::domain::SubscriberEmail;
+use crate::email_client::SesClientProvider;
 use aws_config::timeout::TimeoutConfig;
 use aws_config::{BehaviorVersion, Region};
 use aws_sdk_sesv2::config::Credentials;
@@ -9,9 +12,7 @@ use secrecy::{ExposeSecret, Secret};
 use serde_aux::field_attributes::deserialize_number_from_string;
 use sqlx::postgres::{PgConnectOptions, PgSslMode};
 use sqlx::ConnectOptions;
-
-use crate::domain::SubscriberEmail;
-use crate::email_client::SesClientProvider;
+use tokio::sync::OnceCell;
 
 #[derive(serde::Deserialize, Clone)]
 pub struct Settings {
@@ -69,31 +70,43 @@ pub struct AwsSettings {
     operation_attempt_timeout_secs: u64,
     read_timeout_secs: u64,
     connect_timeout_secs: u64,
+
+    #[serde(skip)]
+    ses_client_singleton: Arc<OnceCell<Client>>,
 }
 
 #[async_trait::async_trait]
 impl SesClientProvider for AwsSettings {
     async fn ses_client(&self) -> Client {
-        let timeout_config = TimeoutConfig::builder()
-            .operation_timeout(Duration::from_secs(self.operation_timeout_secs))
-            .operation_attempt_timeout(Duration::from_secs(self.operation_attempt_timeout_secs))
-            .read_timeout(Duration::from_secs(self.read_timeout_secs))
-            .connect_timeout(Duration::from_secs(self.connect_timeout_secs))
-            .build();
+        let cache = Arc::clone(&self.ses_client_singleton);
+        cache
+            .get_or_init(|| async {
+                let timeout_config = TimeoutConfig::builder()
+                    .operation_timeout(Duration::from_secs(self.operation_timeout_secs))
+                    .operation_attempt_timeout(Duration::from_secs(
+                        self.operation_attempt_timeout_secs,
+                    ))
+                    .read_timeout(Duration::from_secs(self.read_timeout_secs))
+                    .connect_timeout(Duration::from_secs(self.connect_timeout_secs))
+                    .build();
 
-        let config = aws_config::defaults(BehaviorVersion::v2024_03_28())
-            .credentials_provider(Credentials::new(
-                &self.access_key_id,
-                self.secret_access_key.expose_secret(),
-                None,
-                None,
-                "manual",
-            ))
-            .region(Region::new(self.region.clone())) // TODO fix clone?
-            .timeout_config(timeout_config)
-            .load()
-            .await;
-        Client::new(&config)
+                let config = aws_config::defaults(BehaviorVersion::v2024_03_28())
+                    .credentials_provider(Credentials::new(
+                        &self.access_key_id,
+                        self.secret_access_key.expose_secret(),
+                        None,
+                        None,
+                        "manual",
+                    ))
+                    .region(Region::new(self.region.clone()))
+                    .timeout_config(timeout_config)
+                    .load()
+                    .await;
+
+                Client::new(&config)
+            })
+            .await
+            .clone()
     }
 }
 
