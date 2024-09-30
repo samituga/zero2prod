@@ -3,6 +3,7 @@ use std::time::Duration;
 
 use crate::domain::SubscriberEmail;
 use crate::email_client::SesClientProvider;
+use crate::environment::ENVIRONMENT;
 use aws_config::timeout::TimeoutConfig;
 use aws_config::{BehaviorVersion, Region};
 use aws_sdk_sesv2::config::Credentials;
@@ -125,16 +126,11 @@ pub fn get_configuration() -> Result<Settings, config::ConfigError> {
     let base_path = std::env::current_dir().expect("Failed to determine the current directory");
     let configuration_directory = base_path.join("configuration");
 
-    let environment: Environment = std::env::var("APP_ENVIRONMENT")
-        .unwrap_or_else(|_| "local".into())
-        .try_into()
-        .expect("Failed to parse APP_ENVIRONMENT.");
-
-    if environment != Environment::Production {
-        dotenv().ok();
+    if !ENVIRONMENT.is_production() {
+        allow_dot_env_vars();
     }
 
-    let environment_filename = format!("{}.toml", environment.as_str());
+    let environment_filename = format!("{}.toml", ENVIRONMENT.as_str());
 
     let settings = config::Config::builder()
         .add_source(config::File::from(
@@ -153,32 +149,6 @@ pub fn get_configuration() -> Result<Settings, config::ConfigError> {
     settings.try_deserialize::<Settings>()
 }
 
-#[derive(PartialEq)]
-pub enum Environment {
-    Local,
-    Production,
-}
-
-impl Environment {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Environment::Local => "local",
-            Environment::Production => "production",
-        }
-    }
-}
-
-impl TryFrom<String> for Environment {
-    type Error = String;
-    fn try_from(s: String) -> Result<Self, Self::Error> {
-        match s.to_lowercase().as_str() {
-            "local" => Ok(Self::Local),
-            "production" => Ok(Self::Production),
-            other => Err(format!(
-                "{} is not a supported environment. \
-                Use either `local` or `production`.",
-                other
-            )),
-        }
-    }
+fn allow_dot_env_vars() {
+    dotenv().ok();
 }

@@ -37,7 +37,7 @@ impl Application {
             configuration.application.host, configuration.application.port
         );
         let listener = TcpListener::bind(address)?;
-        let port = listener.local_addr().unwrap().port();
+        let port = listener.local_addr()?.port();
         let server = run(listener, connection_pool, email_client)?;
 
         Ok(Self { port, server })
