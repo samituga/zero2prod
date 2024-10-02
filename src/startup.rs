@@ -1,14 +1,13 @@
+use crate::bootstrap::Dependencies;
+use crate::configuration::{DatabaseSettings, Settings};
+use crate::email_client::{AwsSesEmailSender, EmailService};
+use crate::routes::{health_check, subscribe};
 use actix_web::dev::Server;
 use actix_web::{web, App, HttpServer};
 use sqlx::postgres::PgPoolOptions;
 use sqlx::PgPool;
 use std::net::TcpListener;
-use std::sync::Arc;
 use tracing_actix_web::TracingLogger;
-
-use crate::configuration::{DatabaseSettings, Settings};
-use crate::email_client::{AwsSesEmailSender, EmailService};
-use crate::routes::{health_check, subscribe};
 
 pub struct Application {
     port: u16,
@@ -16,7 +15,10 @@ pub struct Application {
 }
 
 impl Application {
-    pub async fn build(configuration: Settings) -> Result<Self, std::io::Error> {
+    pub async fn build(
+        configuration: Settings,
+        dependencies: Dependencies,
+    ) -> Result<Self, std::io::Error> {
         let connection_pool = get_connection_pool(&configuration.database);
 
         sqlx::migrate!("./migrations")
@@ -24,7 +26,7 @@ impl Application {
             .await
             .expect("Failed to migrate the database");
 
-        let aws_ses_client = AwsSesEmailSender::new(Arc::new(configuration.aws));
+        let aws_ses_client = AwsSesEmailSender::new(dependencies.ses_client_provider);
         let sender_email = configuration
             .email_client
             .sender()

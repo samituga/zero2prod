@@ -5,11 +5,6 @@ use std::sync::Arc;
 use crate::domain::SubscriberEmail;
 
 #[async_trait::async_trait]
-pub trait SesClientProvider {
-    async fn ses_client(&self) -> Client;
-}
-
-#[async_trait::async_trait]
 pub trait EmailSender {
     async fn send_email(
         &self,
@@ -19,6 +14,11 @@ pub trait EmailSender {
         html_content: &str,
         text_content: &str,
     ) -> Result<(), String>;
+}
+
+#[async_trait::async_trait]
+pub trait SesClientProvider {
+    async fn ses_client(&self) -> Client;
 }
 
 pub struct AwsSesEmailSender {
