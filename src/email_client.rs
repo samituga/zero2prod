@@ -1,8 +1,75 @@
+use crate::configuration::AwsSettings;
+use crate::domain::SubscriberEmail;
+use aws_config::timeout::TimeoutConfig;
+use aws_config::{BehaviorVersion, Region};
+use aws_sdk_sesv2::config::Credentials;
 use aws_sdk_sesv2::types::{Body, Content, Destination, EmailContent, Message};
 use aws_sdk_sesv2::Client;
+use secrecy::{ExposeSecret, Secret};
 use std::sync::Arc;
+use std::time::Duration;
+use tokio::sync::OnceCell;
 
-use crate::domain::SubscriberEmail;
+pub struct SesClientFactory {
+    region: String,
+    access_key_id: String,
+    secret_access_key: Secret<String>,
+    operation_timeout_secs: u64,
+    operation_attempt_timeout_secs: u64,
+    read_timeout_secs: u64,
+    connect_timeout_secs: u64,
+    ses_client_singleton: Arc<OnceCell<Client>>,
+}
+
+impl SesClientFactory {
+    pub fn new(settings: &AwsSettings) -> Self {
+        Self {
+            region: settings.region.clone(),
+            access_key_id: settings.access_key_id.clone(),
+            secret_access_key: settings.secret_access_key.clone(),
+            operation_timeout_secs: settings.operation_timeout_secs,
+            operation_attempt_timeout_secs: settings.operation_attempt_timeout_secs,
+            read_timeout_secs: settings.read_timeout_secs,
+            connect_timeout_secs: settings.connect_timeout_secs,
+            ses_client_singleton: Arc::new(OnceCell::new()),
+        }
+    }
+}
+
+#[async_trait::async_trait]
+impl SesClientProvider for SesClientFactory {
+    async fn ses_client(&self) -> Client {
+        let cache = Arc::clone(&self.ses_client_singleton);
+        cache
+            .get_or_init(|| async {
+                let timeout_config = TimeoutConfig::builder()
+                    .operation_timeout(Duration::from_secs(self.operation_timeout_secs))
+                    .operation_attempt_timeout(Duration::from_secs(
+                        self.operation_attempt_timeout_secs,
+                    ))
+                    .read_timeout(Duration::from_secs(self.read_timeout_secs))
+                    .connect_timeout(Duration::from_secs(self.connect_timeout_secs))
+                    .build();
+
+                let config = aws_config::defaults(BehaviorVersion::v2024_03_28())
+                    .credentials_provider(Credentials::new(
+                        &self.access_key_id,
+                        self.secret_access_key.expose_secret(),
+                        None,
+                        None,
+                        "manual",
+                    ))
+                    .region(Region::new(self.region.clone()))
+                    .timeout_config(timeout_config)
+                    .load()
+                    .await;
+
+                Client::new(&config)
+            })
+            .await
+            .clone()
+    }
+}
 
 #[async_trait::async_trait]
 pub trait EmailSender {

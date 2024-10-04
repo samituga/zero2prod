@@ -1,5 +1,5 @@
 use crate::configuration::Settings;
-use crate::email_client::SesClientProvider;
+use crate::email_client::{SesClientFactory, SesClientProvider};
 use std::sync::Arc;
 
 pub struct Dependencies {
@@ -8,6 +8,6 @@ pub struct Dependencies {
 
 pub fn build_dependencies(configuration: &Settings) -> Dependencies {
     Dependencies {
-        ses_client_provider: Arc::new(configuration.aws.clone()),
+        ses_client_provider: Arc::new(SesClientFactory::new(&configuration.aws)),
     }
 }
