@@ -1,9 +1,11 @@
 use actix_web::{web, HttpResponse};
 use chrono::Utc;
+use serde_json::json;
 use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::domain::{NewSubscriber, SubscriberEmail, SubscriberName};
+use crate::email_client::{AwsSesEmailSender, EmailService};
 
 #[derive(serde::Deserialize)]
 pub struct FormData {
@@ -23,20 +25,38 @@ impl TryFrom<FormData> for NewSubscriber {
 
 #[tracing::instrument(
     name = "Adding a new subscriber",
-    skip(form, pool),
+    skip(form, pool, email_service),
     fields(
         subscriber_email = %form.email,
         subscriber_name = %form.name
     )
 )]
-pub async fn subscribe(form: web::Form<FormData>, pool: web::Data<PgPool>) -> HttpResponse {
+pub async fn subscribe(
+    form: web::Form<FormData>,
+    pool: web::Data<PgPool>,
+    email_service: web::Data<EmailService<AwsSesEmailSender>>,
+) -> HttpResponse {
     let new_subscriber = match form.0.try_into() {
         Ok(form) => form,
         Err(_) => return HttpResponse::BadRequest().finish(),
     };
 
-    match insert_subscriber(&pool, &new_subscriber).await {
-        Ok(_) => HttpResponse::Ok().finish(),
+    let insert_subscriber_result = insert_subscriber(&pool, &new_subscriber).await;
+    if insert_subscriber_result.is_err() {
+        return HttpResponse::InternalServerError().finish();
+    }
+
+    let send_email_result = email_service
+        .send_email(
+            &new_subscriber.email,
+            "Welcome",
+            "Welcome to our newsletter!",
+            "Welcome to our newsletter!",
+        )
+        .await;
+
+    match send_email_result {
+        Ok(message_id) => HttpResponse::Ok().json(json!({"message_id": message_id})),
         Err(_) => HttpResponse::InternalServerError().finish(),
     }
 }

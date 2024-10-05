@@ -80,7 +80,7 @@ pub trait EmailSender {
         subject: &str,
         html_content: &str,
         text_content: &str,
-    ) -> Result<(), String>;
+    ) -> Result<String, String>;
 }
 
 #[async_trait::async_trait]
@@ -109,7 +109,7 @@ impl EmailSender for AwsSesEmailSender {
         subject: &str,
         text_content: &str,
         html_content: &str,
-    ) -> Result<(), String> {
+    ) -> Result<String, String> {
         let ses_client = self.ses_client_provider.ses_client().await;
         let destination = Destination::builder()
             .to_addresses(recipient_email.as_ref())
@@ -136,7 +136,7 @@ impl EmailSender for AwsSesEmailSender {
             .await;
 
         match result {
-            Ok(_) => Ok(()),
+            Ok(out) => Ok(out.message_id.unwrap_or("success".to_string())),
             Err(e) => Err(format!("Failed to send email: {}", e)),
         }
     }
@@ -161,7 +161,7 @@ impl<T: EmailSender + Send + Sync> EmailService<T> {
         subject: &str,
         html_content: &str,
         text_content: &str,
-    ) -> Result<(), String> {
+    ) -> Result<String, String> {
         self.email_sender
             .send_email(
                 &self.sender_email,
