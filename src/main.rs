@@ -9,7 +9,7 @@ async fn main() -> Result<(), std::io::Error> {
     init_subscriber(telemetry_subscriber);
 
     let configuration = get_configuration().expect("Failed to read configuration.");
-    let dependencies = build_dependencies(&configuration);
+    let dependencies = build_dependencies(&configuration).await;
     let server = Application::build(configuration, dependencies).await?;
 
     server.run_until_stopped().await?;

@@ -7,6 +7,7 @@ use actix_web::{web, App, HttpServer};
 use sqlx::postgres::PgPoolOptions;
 use sqlx::PgPool;
 use std::net::TcpListener;
+use std::sync::Arc;
 use tracing_actix_web::TracingLogger;
 
 pub struct Application {
@@ -15,9 +16,9 @@ pub struct Application {
 }
 
 impl Application {
-    pub async fn build<T: EmailClient + Send + Sync + 'static>(
+    pub async fn build(
         configuration: Settings,
-        dependencies: Dependencies<T>,
+        dependencies: Dependencies,
     ) -> Result<Self, std::io::Error> {
         let connection_pool = get_connection_pool(&configuration.database);
 
@@ -26,8 +27,6 @@ impl Application {
             .await
             .expect("Failed to migrate the database");
 
-        // TODO Bad
-        let email_client = dependencies.email_client_provider.email_client().await;
         let sender_email = configuration
             .email_client
             .sender()
@@ -41,7 +40,12 @@ impl Application {
         );
         let listener = TcpListener::bind(address)?;
         let port = listener.local_addr()?.port();
-        let server = run(listener, connection_pool, email_service, email_client)?;
+        let server = run(
+            listener,
+            connection_pool,
+            email_service,
+            dependencies.email_client,
+        )?;
 
         Ok(Self { port, server })
     }
@@ -55,15 +59,15 @@ impl Application {
     }
 }
 
-pub fn run<T: EmailClient + Send + Sync + 'static>(
+pub fn run(
     listener: TcpListener,
     db_pool: PgPool,
     email_service: EmailService,
-    email_client: T,
+    email_client: Arc<dyn EmailClient>,
 ) -> Result<Server, std::io::Error> {
     let db_pool = web::Data::new(db_pool);
     let email_service = web::Data::new(email_service);
-    let email_client = web::Data::new(email_client);
+    let email_client: web::Data<dyn EmailClient> = web::Data::from(email_client.clone());
     let server = HttpServer::new(move || {
         App::new()
             .wrap(TracingLogger::default())

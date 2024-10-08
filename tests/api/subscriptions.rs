@@ -1,7 +1,7 @@
 use crate::helpers::{spawn_app, TestAppBootstrap};
 use aws_sdk_sesv2::operation::send_email::SendEmailOutput;
-use aws_sdk_sesv2::Client;
 use aws_smithy_mocks_experimental::mock;
+use zero2prod::email::aws_email_client::SesClient;
 
 #[tokio::test]
 async fn subscribe_returns_a_200_for_valid_form_data() {
@@ -80,7 +80,7 @@ async fn subscribe_sends_a_confirmation_email_for_valid_data() {
     let message_id = "newsletter-email";
     let body = format!("name={}&email={}", name, email);
 
-    let mock_send_email = mock!(Client::send_email)
+    let mock_send_email = mock!(SesClient::send_email)
         .match_requests(move |req| {
             req.destination()
                 .unwrap()
@@ -90,7 +90,7 @@ async fn subscribe_sends_a_confirmation_email_for_valid_data() {
         .then_output(move || SendEmailOutput::builder().message_id(message_id).build());
 
     let app = TestAppBootstrap::builder()
-        .ses_client_rules(&[mock_send_email])
+        .aws_email_client_rules(&[mock_send_email])
         .spawn_app()
         .await;
 

@@ -5,8 +5,7 @@ use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::domain::{NewSubscriber, SubscriberEmail, SubscriberName};
-use crate::email::aws_email_client::SesClient;
-use crate::email::email_client::EmailService;
+use crate::email::email_client::{EmailClient, EmailService};
 
 #[derive(serde::Deserialize)]
 pub struct FormData {
@@ -26,7 +25,7 @@ impl TryFrom<FormData> for NewSubscriber {
 
 #[tracing::instrument(
     name = "Adding a new subscriber",
-    skip(form, pool, email_service),
+    skip(form, pool, email_service, email_client),
     fields(
         subscriber_email = %form.email,
         subscriber_name = %form.name
@@ -36,7 +35,7 @@ pub async fn subscribe(
     form: web::Form<FormData>,
     pool: web::Data<PgPool>,
     email_service: web::Data<EmailService>,
-    ses_client: web::Data<SesClient>,
+    email_client: web::Data<dyn EmailClient>,
 ) -> HttpResponse {
     let new_subscriber = match form.0.try_into() {
         Ok(form) => form,
@@ -50,7 +49,7 @@ pub async fn subscribe(
 
     let send_email_result = email_service
         .send_email(
-            ses_client.get_ref(),
+            email_client.get_ref(),
             &new_subscriber.email,
             "Welcome",
             "Welcome to our newsletter!",

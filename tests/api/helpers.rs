@@ -1,4 +1,3 @@
-use aws_sdk_sesv2::Client;
 use aws_smithy_mocks_experimental::{mock_client, Rule, RuleMode};
 use secrecy::Secret;
 use sqlx::{Connection, Executor, PgConnection, PgPool};
@@ -6,12 +5,12 @@ use std::sync::{Arc, LazyLock};
 use uuid::Uuid;
 use zero2prod::bootstrap::Dependencies;
 use zero2prod::configuration::{get_configuration, DatabaseSettings};
-use zero2prod::email_client::SesClientProvider;
+use zero2prod::email::email_client::EmailClient;
 use zero2prod::startup::{get_connection_pool, Application};
 use zero2prod::telemetry::{get_subscriber, init_subscriber};
 
 pub struct TestAppBootstrap {
-    ses_client_provider: Arc<dyn SesClientProvider + Send + Sync>,
+    email_client: Arc<dyn EmailClient>,
 }
 
 impl TestAppBootstrap {
@@ -32,7 +31,7 @@ impl TestAppBootstrap {
         create_database(&configuration.database).await;
 
         let dependencies = Dependencies {
-            email_client_provider: self.ses_client_provider,
+            email_client: self.email_client,
         };
 
         let application = Application::build(configuration.clone(), dependencies)
@@ -50,39 +49,25 @@ impl TestAppBootstrap {
 }
 
 pub struct TestAppBootstrapBuilder {
-    ses_client_provider: Option<Arc<dyn SesClientProvider + Send + Sync>>,
+    email_client: Option<Arc<dyn EmailClient>>,
 }
 
 impl TestAppBootstrapBuilder {
     pub fn new() -> Self {
-        Self {
-            ses_client_provider: None,
-        }
+        Self { email_client: None }
     }
 
-    pub fn ses_client_rules(mut self, rules: &[Rule]) -> Self {
-        let client = mock_client!(aws_sdk_sesv2, RuleMode::Sequential, rules);
+    pub fn aws_email_client_rules(mut self, rules: &[Rule]) -> Self {
+        let client: Arc<dyn EmailClient> =
+            Arc::new(mock_client!(aws_sdk_sesv2, RuleMode::Sequential, rules));
 
-        struct MockSesClientProvider {
-            client: Client,
-        }
-
-        #[async_trait::async_trait]
-        impl SesClientProvider for MockSesClientProvider {
-            async fn ses_client(&self) -> Client {
-                self.client.clone()
-            }
-        }
-
-        self.ses_client_provider = Some(Arc::new(MockSesClientProvider { client }));
+        self.email_client = Some(client);
         self
     }
 
     pub async fn spawn_app(self) -> TestApp {
         TestAppBootstrap {
-            ses_client_provider: self
-                .ses_client_provider
-                .expect("ses_client_provider is required"),
+            email_client: self.email_client.expect("email_client is required"),
         }
         .spawn_app()
         .await
@@ -121,7 +106,7 @@ static TRACING: LazyLock<()> = LazyLock::new(|| {
 
 pub async fn spawn_app() -> TestApp {
     TestAppBootstrap::builder()
-        .ses_client_rules(&[])
+        .aws_email_client_rules(&[])
         .spawn_app()
         .await
 }

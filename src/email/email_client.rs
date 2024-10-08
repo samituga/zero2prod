@@ -32,7 +32,7 @@ impl EmailService {
 }
 
 #[async_trait::async_trait]
-pub trait EmailClient {
+pub trait EmailClient: Sync + Send {
     async fn send_email(
         &self,
         sender_email: &Email,
