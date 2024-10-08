@@ -5,7 +5,8 @@ use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::domain::{NewSubscriber, SubscriberEmail, SubscriberName};
-use crate::email_client::{AwsSesEmailSender, EmailService};
+use crate::email::aws_email_client::SesClient;
+use crate::email::email_client::EmailService;
 
 #[derive(serde::Deserialize)]
 pub struct FormData {
@@ -34,7 +35,8 @@ impl TryFrom<FormData> for NewSubscriber {
 pub async fn subscribe(
     form: web::Form<FormData>,
     pool: web::Data<PgPool>,
-    email_service: web::Data<EmailService<AwsSesEmailSender>>,
+    email_service: web::Data<EmailService>,
+    ses_client: web::Data<SesClient>,
 ) -> HttpResponse {
     let new_subscriber = match form.0.try_into() {
         Ok(form) => form,
@@ -48,6 +50,7 @@ pub async fn subscribe(
 
     let send_email_result = email_service
         .send_email(
+            ses_client.get_ref(),
             &new_subscriber.email,
             "Welcome",
             "Welcome to our newsletter!",

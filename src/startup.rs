@@ -1,6 +1,6 @@
 use crate::bootstrap::Dependencies;
 use crate::configuration::{DatabaseSettings, Settings};
-use crate::email_client::{AwsSesEmailSender, EmailService};
+use crate::email::email_client::{EmailClient, EmailService};
 use crate::routes::{health_check, subscribe};
 use actix_web::dev::Server;
 use actix_web::{web, App, HttpServer};
@@ -15,9 +15,9 @@ pub struct Application {
 }
 
 impl Application {
-    pub async fn build(
+    pub async fn build<T: EmailClient + Send + Sync + 'static>(
         configuration: Settings,
-        dependencies: Dependencies,
+        dependencies: Dependencies<T>,
     ) -> Result<Self, std::io::Error> {
         let connection_pool = get_connection_pool(&configuration.database);
 
@@ -26,13 +26,14 @@ impl Application {
             .await
             .expect("Failed to migrate the database");
 
-        let aws_ses_client = AwsSesEmailSender::new(dependencies.ses_client_provider);
+        // TODO Bad
+        let email_client = dependencies.email_client_provider.email_client().await;
         let sender_email = configuration
             .email_client
             .sender()
             .expect("Invalid sender email address.");
 
-        let email_client = EmailService::new(aws_ses_client, sender_email);
+        let email_service = EmailService::new(sender_email);
 
         let address = format!(
             "{}:{}",
@@ -40,7 +41,7 @@ impl Application {
         );
         let listener = TcpListener::bind(address)?;
         let port = listener.local_addr()?.port();
-        let server = run(listener, connection_pool, email_client)?;
+        let server = run(listener, connection_pool, email_service, email_client)?;
 
         Ok(Self { port, server })
     }
@@ -54,12 +55,14 @@ impl Application {
     }
 }
 
-pub fn run(
+pub fn run<T: EmailClient + Send + Sync + 'static>(
     listener: TcpListener,
     db_pool: PgPool,
-    email_client: EmailService<AwsSesEmailSender>,
+    email_service: EmailService,
+    email_client: T,
 ) -> Result<Server, std::io::Error> {
     let db_pool = web::Data::new(db_pool);
+    let email_service = web::Data::new(email_service);
     let email_client = web::Data::new(email_client);
     let server = HttpServer::new(move || {
         App::new()
@@ -67,6 +70,7 @@ pub fn run(
             .route("/health_check", web::get().to(health_check))
             .route("/subscriptions", web::post().to(subscribe))
             .app_data(db_pool.clone())
+            .app_data(email_service.clone())
             .app_data(email_client.clone())
     })
     .listen(listener)?

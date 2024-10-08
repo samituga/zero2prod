@@ -32,7 +32,7 @@ impl TestAppBootstrap {
         create_database(&configuration.database).await;
 
         let dependencies = Dependencies {
-            ses_client_provider: self.ses_client_provider,
+            email_client_provider: self.ses_client_provider,
         };
 
         let application = Application::build(configuration.clone(), dependencies)
