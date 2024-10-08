@@ -1,76 +1,47 @@
-use aws_smithy_mocks_experimental::{mock_client, Rule, RuleMode};
 use secrecy::Secret;
 use sqlx::{Connection, Executor, PgConnection, PgPool};
 use std::sync::{Arc, LazyLock};
 use uuid::Uuid;
 use zero2prod::bootstrap::Dependencies;
 use zero2prod::configuration::{get_configuration, DatabaseSettings};
-use zero2prod::email::email_client::EmailClient;
+use zero2prod::email::aws_email_client::SesClientFactory;
+use zero2prod::email::email_client::{EmailClient, EmailClientProvider};
 use zero2prod::startup::{get_connection_pool, Application};
 use zero2prod::telemetry::{get_subscriber, init_subscriber};
 
-pub struct TestAppBootstrap {
-    email_client: Arc<dyn EmailClient>,
-}
+pub async fn spawn_app() -> TestApp {
+    LazyLock::force(&TRACING);
 
-impl TestAppBootstrap {
-    pub fn builder() -> TestAppBootstrapBuilder {
-        TestAppBootstrapBuilder::new()
-    }
+    let configuration = {
+        let mut configuration = get_configuration().expect("Failed to read configuration.");
+        configuration.database.database_name = Uuid::new_v4().to_string();
+        configuration.application.port = 0;
+        configuration.aws.endpoint_url = Some("localhost:9090".to_string()); // TODO mock server port
+        configuration
+    };
 
-    pub async fn spawn_app(self) -> TestApp {
-        LazyLock::force(&TRACING);
+    create_database(&configuration.database).await;
 
-        let configuration = {
-            let mut configuration = get_configuration().expect("Failed to read configuration.");
-            configuration.database.database_name = Uuid::new_v4().to_string();
-            configuration.application.port = 0;
-            configuration
-        };
+    let aws_email_client: Arc<dyn EmailClient> = Arc::new(
+        SesClientFactory::new(&configuration.aws)
+            .email_client()
+            .await,
+    );
 
-        create_database(&configuration.database).await;
+    let dependencies = Dependencies {
+        email_client: aws_email_client,
+    };
 
-        let dependencies = Dependencies {
-            email_client: self.email_client,
-        };
-
-        let application = Application::build(configuration.clone(), dependencies)
-            .await
-            .expect("Failed to build application.");
-        let address = format!("http://127.0.0.1:{}", application.port());
-
-        let _ = tokio::spawn(application.run_until_stopped());
-
-        TestApp {
-            address,
-            db_pool: get_connection_pool(&configuration.database),
-        }
-    }
-}
-
-pub struct TestAppBootstrapBuilder {
-    email_client: Option<Arc<dyn EmailClient>>,
-}
-
-impl TestAppBootstrapBuilder {
-    pub fn new() -> Self {
-        Self { email_client: None }
-    }
-
-    pub fn aws_email_client_rules(mut self, rules: &[Rule]) -> Self {
-        let client: Arc<dyn EmailClient> =
-            Arc::new(mock_client!(aws_sdk_sesv2, RuleMode::Sequential, rules));
-
-        self.email_client = Some(client);
-        self
-    }
-
-    pub async fn spawn_app(self) -> TestApp {
-        TestAppBootstrap {
-            email_client: self.email_client.expect("email_client is required"),
-        }
-        .spawn_app()
+    let application = Application::build(configuration.clone(), dependencies)
         .await
+        .expect("Failed to build application.");
+    let address = format!("http://127.0.0.1:{}", application.port());
+
+    let _ = tokio::spawn(application.run_until_stopped());
+
+    TestApp {
+        address,
+        db_pool: get_connection_pool(&configuration.database),
     }
 }
 
@@ -103,13 +74,6 @@ static TRACING: LazyLock<()> = LazyLock::new(|| {
         init_subscriber(subscriber);
     };
 });
-
-pub async fn spawn_app() -> TestApp {
-    TestAppBootstrap::builder()
-        .aws_email_client_rules(&[])
-        .spawn_app()
-        .await
-}
 
 async fn create_database(config: &DatabaseSettings) {
     let maintenance_settings = DatabaseSettings {

@@ -4071,6 +4071,7 @@ dependencies = [
  "config",
  "dotenvy",
  "fake",
+ "http 1.1.0",
  "log",
  "mockall",
  "once_cell",

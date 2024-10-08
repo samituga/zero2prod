@@ -62,6 +62,7 @@ pub struct AwsSettings {
     pub operation_attempt_timeout_secs: u64,
     pub read_timeout_secs: u64,
     pub connect_timeout_secs: u64,
+    pub endpoint_url: Option<String>,
 }
 
 #[derive(serde::Deserialize, Clone)]
