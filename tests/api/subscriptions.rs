@@ -1,4 +1,5 @@
-use crate::helpers::spawn_app;
+use crate::api::helpers::{spawn_app, TestAppBootstrap};
+use crate::mocks::send_email_rule;
 
 #[tokio::test]
 async fn subscribe_returns_a_200_for_valid_form_data() {
@@ -7,7 +8,12 @@ async fn subscribe_returns_a_200_for_valid_form_data() {
     let name = "le guin";
     let body = format!("name={}&email={}", name, email);
 
-    let app = spawn_app().await;
+    let mock_send_email = send_email_rule(email.to_string());
+
+    let app = TestAppBootstrap::builder()
+        .aws_email_client_rules(&[mock_send_email])
+        .spawn_app()
+        .await;
 
     // Act
     let response = app.post_subscriptions(body).await;
@@ -77,9 +83,12 @@ async fn subscribe_sends_a_confirmation_email_for_valid_data() {
     let message_id = "newsletter-email";
     let body = format!("name={}&email={}", name, email);
 
-    let app = spawn_app().await;
+    let mock_send_email = send_email_rule(email.to_string());
 
-    // TODO mock server expect aws email client calls
+    let app = TestAppBootstrap::builder()
+        .aws_email_client_rules(&[mock_send_email])
+        .spawn_app()
+        .await;
 
     // Act
     let response = app.post_subscriptions(body).await;

@@ -14,7 +14,7 @@ name = "zero2prod"
 [dependencies]
 actix-web = "4"
 async-trait = "0.1.80"
-aws-config = "1.5.1"
+aws-config = "1.5.8"
 aws-sdk-sesv2 = { version = "1.33.0", features = ["test-util"] }
 chrono = { version = "0.4.38", default-features = false, features = ["clock"] }
 config = { version = "0.14.0", features = ["toml"], default-features = false }
