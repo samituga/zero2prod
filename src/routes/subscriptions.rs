@@ -47,17 +47,10 @@ pub async fn subscribe(
         return HttpResponse::InternalServerError().finish();
     }
 
-    let send_email_result = email_service
-        .send_email(
-            email_client.get_ref(),
-            &new_subscriber.email,
-            "Welcome",
-            "Welcome to our newsletter!",
-            "Welcome to our newsletter!",
-        )
-        .await;
+    let send_confirmation_email_result =
+        send_confirmation_email(new_subscriber, &email_service, email_client.get_ref()).await;
 
-    match send_email_result {
+    match send_confirmation_email_result {
         Ok(message_id) => HttpResponse::Ok().json(json!({"message_id": message_id})),
         Err(_) => HttpResponse::InternalServerError().finish(),
     }
@@ -74,7 +67,7 @@ async fn insert_subscriber(
     sqlx::query!(
         r#"
     INSERT INTO subscriptions (id, email, name, subscribed_at, status)
-    VALUES ($1, $2, $3, $4, 'confirmed')
+    VALUES ($1, $2, $3, $4, 'pending_confirmation')
             "#,
         Uuid::new_v4(),
         new_subscriber.email.as_ref(),
@@ -88,4 +81,33 @@ async fn insert_subscriber(
         e
     })?;
     Ok(())
+}
+
+async fn send_confirmation_email(
+    new_subscriber: NewSubscriber,
+    email_service: &EmailService,
+    email_client: &dyn EmailClient,
+) -> Result<String, String> {
+    let confirmation_link = "https://there-is-no-such-domain.com/subscriptions/confirm";
+
+    let html_content = &format!(
+        "Welcome to our newsletter!<br />\
+                Click <a href=\"{}\"here</a> to confirm your subscription.",
+        confirmation_link
+    );
+
+    let text_content = &format!(
+        "Welcome to our newsletter!\nVisit {} to confirm your subscription.",
+        confirmation_link
+    );
+
+    email_service
+        .send_email(
+            email_client,
+            &new_subscriber.email,
+            "Welcome",
+            html_content,
+            text_content,
+        )
+        .await
 }

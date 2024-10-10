@@ -53,5 +53,6 @@ features = [
 aws-smithy-mocks-experimental = "0.2.1"
 claims = "0.7.1"
 fake = "2.9.2"
+linkify = "0.10.0"
 mockall = "0.13.0"
 proptest = "1.4.0"

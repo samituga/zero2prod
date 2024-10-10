@@ -1,17 +1,36 @@
 use crate::api::helpers::{spawn_app, TestAppBootstrap};
-use crate::mocks::send_email_rule;
+use crate::aws_ses_rules::{send_any_email_rule, send_confirmation_email_with_a_link_rule};
 
 #[tokio::test]
 async fn subscribe_returns_a_200_for_valid_form_data() {
+    // Arrange
+    let body = "name=le guin&email=ursula_le_guin@gmail.com".to_string();
+
+    let send_any_email_rule = send_any_email_rule();
+
+    let app = TestAppBootstrap::builder()
+        .aws_email_client_rules(&[send_any_email_rule])
+        .spawn_app()
+        .await;
+
+    // Act
+    let response = app.post_subscriptions(body).await;
+
+    // Assert
+    assert_eq!(200, response.status().as_u16());
+}
+
+#[tokio::test]
+async fn subscribe_persists_the_new_subscriber() {
     // Arrange
     let email = "ursula_le_guin@gmail.com";
     let name = "le guin";
     let body = format!("name={}&email={}", name, email);
 
-    let mock_send_email = send_email_rule(email.to_string());
+    let send_any_email_rule = send_any_email_rule();
 
     let app = TestAppBootstrap::builder()
-        .aws_email_client_rules(&[mock_send_email])
+        .aws_email_client_rules(&[send_any_email_rule])
         .spawn_app()
         .await;
 
@@ -21,12 +40,37 @@ async fn subscribe_returns_a_200_for_valid_form_data() {
     // Assert
     assert_eq!(200, response.status().as_u16());
 
-    let saved = sqlx::query!("SELECT email, name FROM subscriptions",)
+    let saved = sqlx::query!("SELECT email, name, status FROM subscriptions",)
         .fetch_one(&app.db_pool)
         .await
         .expect("Failed to fetch saved subscription.");
     assert_eq!(saved.email, email);
     assert_eq!(saved.name, name);
+    assert_eq!(saved.status, "pending_confirmation");
+}
+
+#[tokio::test]
+async fn subscribe_sends_confirmation_email_with_a_link() {
+    // Arrange
+    let email = "ursula_le_guin@gmail.com";
+    let body = format!("name=le guin&email={}", email);
+    let message_id = "newsletter-email";
+
+    let send_confirmation_email_with_a_link_rule =
+        send_confirmation_email_with_a_link_rule(email.to_string());
+
+    let app = TestAppBootstrap::builder()
+        .aws_email_client_rules(&[send_confirmation_email_with_a_link_rule])
+        .spawn_app()
+        .await;
+
+    // Act
+    let response = app.post_subscriptions(body).await;
+
+    // Assert
+    assert_eq!(200, response.status().as_u16());
+    let response_body: serde_json::Value = response.json().await.unwrap();
+    assert_eq!(response_body["message_id"], message_id);
 }
 
 #[tokio::test]
@@ -73,35 +117,4 @@ async fn subscribe_returns_400_when_fields_are_present_but_invalid() {
             description
         )
     }
-}
-
-#[tokio::test]
-async fn subscribe_sends_a_confirmation_email_for_valid_data() {
-    // Arrange
-    let email = "ursula_le_guin@gmail.com";
-    let name = "le guin";
-    let message_id = "newsletter-email";
-    let body = format!("name={}&email={}", name, email);
-
-    let mock_send_email = send_email_rule(email.to_string());
-
-    let app = TestAppBootstrap::builder()
-        .aws_email_client_rules(&[mock_send_email])
-        .spawn_app()
-        .await;
-
-    // Act
-    let response = app.post_subscriptions(body).await;
-
-    // Assert
-    assert_eq!(200, response.status().as_u16());
-    let response_body: serde_json::Value = response.json().await.unwrap();
-    assert_eq!(response_body["message_id"], message_id);
-
-    let saved = sqlx::query!("SELECT email, name FROM subscriptions",)
-        .fetch_one(&app.db_pool)
-        .await
-        .expect("Failed to fetch saved subscription.");
-    assert_eq!(saved.email, email);
-    assert_eq!(saved.name, name);
 }

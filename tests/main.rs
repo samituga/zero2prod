@@ -1,2 +1,2 @@
 mod api;
-mod mocks;
+mod aws_ses_rules;
