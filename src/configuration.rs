@@ -1,7 +1,9 @@
 use crate::domain::SubscriberEmail;
 use crate::environment::ENVIRONMENT;
 use dotenvy::dotenv;
+use http::Uri;
 use secrecy::{ExposeSecret, Secret};
+use serde::Deserialize;
 use serde_aux::field_attributes::deserialize_number_from_string;
 use sqlx::postgres::{PgConnectOptions, PgSslMode};
 use sqlx::ConnectOptions;
@@ -19,7 +21,16 @@ pub struct ApplicationSettings {
     #[serde(deserialize_with = "deserialize_number_from_string")]
     pub port: u16,
     pub host: String,
-    pub base_url: String,
+    #[serde(deserialize_with = "deserialize_base_url")]
+    pub base_url: Uri,
+}
+
+fn deserialize_base_url<'de, D>(deserializer: D) -> Result<Uri, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let s: String = Deserialize::deserialize(deserializer)?;
+    s.parse::<Uri>().map_err(serde::de::Error::custom)
 }
 
 #[derive(serde::Deserialize, Clone)]
@@ -63,7 +74,6 @@ pub struct AwsSettings {
     pub operation_attempt_timeout_secs: u64,
     pub read_timeout_secs: u64,
     pub connect_timeout_secs: u64,
-    pub endpoint_url: Option<String>,
 }
 
 #[derive(serde::Deserialize, Clone)]

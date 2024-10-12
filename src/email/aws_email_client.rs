@@ -1,12 +1,11 @@
 use crate::configuration::AwsSettings;
-use crate::domain::Email;
+use crate::domain::{Email, SubscriberEmail};
 use crate::email::email_client::{EmailClient, EmailClientProvider};
 use aws_config::timeout::TimeoutConfig;
 use aws_config::{BehaviorVersion, Region};
 use aws_sdk_sesv2::config::Credentials;
 use aws_sdk_sesv2::types::{Body, Content, Destination, EmailContent, Message};
 use aws_sdk_sesv2::Client;
-use http::Uri;
 use secrecy::{ExposeSecret, Secret};
 use std::time::Duration;
 
@@ -17,7 +16,7 @@ impl EmailClient for SesClient {
     async fn send_email(
         &self,
         sender_email: &Email,
-        recipient_email: &Email,
+        recipient_email: &SubscriberEmail,
         subject: &str,
         html_content: &str,
         text_content: &str,
@@ -65,7 +64,6 @@ pub struct SesClientFactory {
     operation_attempt_timeout_secs: u64,
     read_timeout_secs: u64,
     connect_timeout_secs: u64,
-    endpoint_url: Option<Uri>,
 }
 
 impl SesClientFactory {
@@ -78,11 +76,6 @@ impl SesClientFactory {
             operation_attempt_timeout_secs: settings.operation_attempt_timeout_secs,
             read_timeout_secs: settings.read_timeout_secs,
             connect_timeout_secs: settings.connect_timeout_secs,
-            endpoint_url: settings.endpoint_url.clone().map(|endpoint| {
-                endpoint
-                    .parse::<Uri>()
-                    .expect("aws endpoint_url is not valid URI")
-            }),
         }
     }
 }
@@ -97,7 +90,7 @@ impl EmailClientProvider<SesClient> for SesClientFactory {
             .connect_timeout(Duration::from_secs(self.connect_timeout_secs))
             .build();
 
-        let mut config_builder = aws_config::defaults(BehaviorVersion::v2024_03_28())
+        let config = aws_config::defaults(BehaviorVersion::v2024_03_28())
             .credentials_provider(Credentials::new(
                 &self.access_key_id,
                 self.secret_access_key.expose_secret(),
@@ -106,14 +99,10 @@ impl EmailClientProvider<SesClient> for SesClientFactory {
                 "manual",
             ))
             .region(Region::new(self.region.clone()))
-            .timeout_config(timeout_config);
+            .timeout_config(timeout_config)
+            .load()
+            .await;
 
-        if self.endpoint_url.is_some() {
-            config_builder =
-                config_builder.endpoint_url(self.endpoint_url.clone().unwrap().to_string());
-        }
-
-        let config = config_builder.load().await;
         SesClient::new(&config)
     }
 }

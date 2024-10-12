@@ -1,4 +1,4 @@
-use crate::domain::Email;
+use crate::domain::{Email, SubscriberEmail};
 
 pub struct EmailService {
     sender_email: Email,
@@ -14,7 +14,7 @@ impl EmailService {
     pub async fn send_email(
         &self,
         email_client: &dyn EmailClient,
-        recipient_email: &Email,
+        recipient_email: &SubscriberEmail,
         subject: &str,
         html_content: &str,
         text_content: &str,
@@ -36,7 +36,7 @@ pub trait EmailClient: Sync + Send {
     async fn send_email(
         &self,
         sender_email: &Email,
-        recipient_email: &Email,
+        recipient_email: &SubscriberEmail,
         subject: &str,
         html_content: &str,
         text_content: &str,
@@ -50,7 +50,7 @@ pub trait EmailClientProvider<T: EmailClient> {
 
 #[cfg(test)]
 mod tests {
-    use crate::domain::Email;
+    use crate::domain::{Email, SubscriberEmail};
     use crate::email::email_client::{EmailClient, EmailService};
     use async_trait::async_trait;
     use claims::assert_ok;
@@ -66,7 +66,7 @@ mod tests {
             async fn send_email(
                 &self,
                 sender_email: &Email,
-                recipient_email: &Email,
+                recipient_email: &SubscriberEmail,
                 subject: &str,
                 html_content: &str,
                 text_content: &str,

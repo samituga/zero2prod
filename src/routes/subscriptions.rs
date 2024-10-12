@@ -1,5 +1,6 @@
 use actix_web::{web, HttpResponse};
 use chrono::Utc;
+use http::Uri;
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
 use sqlx::PgPool;
@@ -134,11 +135,11 @@ async fn send_confirmation_email(
     new_subscriber: NewSubscriber,
     email_service: &EmailService,
     email_client: &dyn EmailClient,
-    base_url: &str,
+    base_url: &Uri,
     subscription_token: &str,
 ) -> Result<(), String> {
     let confirmation_link = format!(
-        "{}/subscriptions/confirm?subscription_token={}",
+        "{}subscriptions/confirm?subscription_token={}",
         base_url, subscription_token,
     );
 

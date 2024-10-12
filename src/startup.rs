@@ -4,6 +4,7 @@ use crate::email::email_client::{EmailClient, EmailService};
 use crate::routes::{confirm, health_check, subscribe};
 use actix_web::dev::Server;
 use actix_web::{web, App, HttpServer};
+use http::Uri;
 use sqlx::postgres::PgPoolOptions;
 use sqlx::PgPool;
 use std::net::TcpListener;
@@ -60,14 +61,14 @@ impl Application {
     }
 }
 
-pub struct ApplicationBaseUrl(pub String);
+pub struct ApplicationBaseUrl(pub Uri);
 
 pub fn run(
     listener: TcpListener,
     db_pool: PgPool,
     email_service: EmailService,
     email_client: Arc<dyn EmailClient>,
-    base_url: String,
+    base_url: Uri,
 ) -> Result<Server, std::io::Error> {
     let db_pool = web::Data::new(db_pool);
     let email_service = web::Data::new(email_service);

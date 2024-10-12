@@ -3,7 +3,6 @@ use sqlx::PgPool;
 use uuid::Uuid;
 
 #[derive(serde::Deserialize)]
-#[allow(dead_code)] // TODO remove
 pub struct Parameters {
     subscription_token: String,
 }
