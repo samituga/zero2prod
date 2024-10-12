@@ -34,7 +34,6 @@ repos:
       - id: sqlx
         name: check if sqlx offline data us up-to-date
         language: system
-        files: ^.sqlx/
         entry: cargo sqlx prepare --workspace --check -- --all-targets
         pass_filenames: false
 

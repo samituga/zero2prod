@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT email, name FROM subscriptions",
+  "query": "SELECT email, name, status FROM subscriptions",
   "describe": {
     "columns": [
       {
@@ -12,6 +12,11 @@
         "ordinal": 1,
         "name": "name",
         "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "status",
+        "type_info": "Text"
       }
     ],
     "parameters": {
@@ -19,8 +24,9 @@
     },
     "nullable": [
       false,
+      false,
       false
     ]
   },
-  "hash": "ed279fc2dda0c3ede3e81a4500fcaa9da2220f8a9ad6c1debc3095deb9f84759"
+  "hash": "9ab6536d2bf619381573b3bf13507d53b2e9cf50051e51c803e916f25b51abd2"
 }
