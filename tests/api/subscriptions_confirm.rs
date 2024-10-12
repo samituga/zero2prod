@@ -1,6 +1,5 @@
 use crate::api::helpers::{spawn_app, TestAppBootstrap};
 use crate::aws_ses_rules::AwsRuleWrapper;
-use reqwest::Url;
 
 #[tokio::test]
 async fn confirmations_without_token_are_rejected_with_a_400() {
@@ -33,17 +32,47 @@ async fn the_link_by_subscribe_returns_a_200_if_called() {
     app.post_subscriptions(body).await;
 
     let send_confirmation_email_with_a_link_request = aws_rule_wrapper.expect_one_request();
+    let confirmation_links =
+        app.extract_confirmation_links(&send_confirmation_email_with_a_link_request);
+
+    // Act
+    let response = reqwest::get(confirmation_links.html).await.unwrap();
+
+    // Assert
+    assert_eq!(response.status().as_u16(), 200);
+}
+
+#[tokio::test]
+async fn clicking_on_the_confirmation_link_confirms_a_subscriber() {
+    // Arrange
+    let email = "ursula_le_guin@gmail.com";
+    let body = format!("name=le guin&email={}", email);
+
+    let aws_rule_wrapper = AwsRuleWrapper::new_send_email_wrapper();
+    let send_any_email_rule = aws_rule_wrapper.send_any_email_rule();
+
+    let app = TestAppBootstrap::builder()
+        .aws_email_client_rules(&[send_any_email_rule])
+        .spawn_app()
+        .await;
+
+    app.post_subscriptions(body).await;
+
+    let send_confirmation_email_with_a_link_request = aws_rule_wrapper.expect_one_request();
 
     let confirmation_links =
         app.extract_confirmation_links(&send_confirmation_email_with_a_link_request);
 
-    let mut confirmation_link = Url::parse(confirmation_links.html.as_str()).unwrap();
-    assert_eq!(confirmation_link.host_str().unwrap(), "127.0.0.1");
-    confirmation_link.set_port(Some(app.port)).unwrap();
-
     // Act
-    let response = reqwest::get(confirmation_link).await.unwrap();
+    reqwest::get(confirmation_links.html).await.unwrap();
 
     // Assert
-    assert_eq!(response.status().as_u16(), 200);
+    let saved = sqlx::query!("SELECT email, name, status FROM subscriptions",)
+        .fetch_one(&app.db_pool)
+        .await
+        .expect("Failed to fetch saved subscription.");
+
+    assert_eq!(saved.email, "ursula_le_guin@gmail.com");
+    assert_eq!(saved.name, "le guin");
+    assert_eq!(saved.status, "confirmed");
 }
