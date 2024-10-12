@@ -1,3 +1,4 @@
+use aws_sdk_sesv2::operation::send_email::SendEmailInput;
 use aws_smithy_mocks_experimental::{mock_client, Rule, RuleMode};
 use secrecy::Secret;
 use sqlx::{Connection, Executor, PgConnection, PgPool};
@@ -37,12 +38,14 @@ impl TestAppBootstrap {
         let application = Application::build(configuration.clone(), dependencies)
             .await
             .expect("Failed to build application.");
-        let address = format!("http://127.0.0.1:{}", application.port());
+        let application_port = application.port();
+        let address = format!("http://127.0.0.1:{}", application_port);
 
         let _ = tokio::spawn(application.run_until_stopped());
 
         TestApp {
             address,
+            port: application_port,
             db_pool: get_connection_pool(&configuration.database),
         }
     }
@@ -76,7 +79,13 @@ impl TestAppBootstrapBuilder {
 
 pub struct TestApp {
     pub address: String,
+    pub port: u16,
     pub db_pool: PgPool,
+}
+
+pub struct ConfirmationLinks {
+    pub html: reqwest::Url,
+    pub plain_text: reqwest::Url,
 }
 
 impl TestApp {
@@ -88,6 +97,28 @@ impl TestApp {
             .send()
             .await
             .expect("Failed to execute request.")
+    }
+
+    pub fn extract_confirmation_links(&self, request: &SendEmailInput) -> ConfirmationLinks {
+        let get_link = |s: &str| {
+            let links: Vec<_> = linkify::LinkFinder::new()
+                .links(s)
+                .filter(|l| *l.kind() == linkify::LinkKind::Url)
+                .collect();
+            assert_eq!(links.len(), 1);
+            let raw_link = links[0].as_str().to_owned();
+            let mut confirmation_link = reqwest::Url::parse(&raw_link).unwrap();
+            // Let's make sure we don't call random APIs on the web
+            assert_eq!(confirmation_link.host_str().unwrap(), "127.0.0.1");
+            confirmation_link.set_port(Some(self.port)).unwrap();
+            confirmation_link
+        };
+
+        let body = request.content().unwrap().simple().unwrap().body().unwrap();
+        let html = get_link(body.html().unwrap().data());
+        let plain_text = get_link(body.text().unwrap().data());
+
+        ConfirmationLinks { html, plain_text }
     }
 }
 

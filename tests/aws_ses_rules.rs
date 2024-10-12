@@ -1,50 +1,74 @@
-use aws_sdk_sesv2::operation::send_email::SendEmailOutput;
+use aws_sdk_sesv2::operation::send_email::{SendEmailInput, SendEmailOutput};
+use aws_sdk_sesv2::types::Body;
 use aws_smithy_mocks_experimental::{mock, Rule};
+use std::cell::RefCell;
+use std::fmt::Debug;
+use std::sync::{Arc, Mutex};
 use zero2prod::email::aws_email_client::SesClient;
 
-pub fn send_any_email_rule() -> Rule {
-    mock!(SesClient::send_email)
-        .match_requests(|_| true)
-        .then_output(|| SendEmailOutput::builder().build())
+pub struct AwsRuleWrapper<I: Send + Sync + Debug + 'static> {
+    received_requests: Arc<Mutex<RefCell<Vec<I>>>>,
 }
 
-pub fn send_confirmation_email_with_a_link_rule(email: String) -> Rule {
-    let get_link = |s: &str| {
-        let links: Vec<_> = linkify::LinkFinder::new()
-            .links(s)
-            .filter(|l| *l.kind() == linkify::LinkKind::Url)
-            .collect();
-        assert_eq!(links.len(), 1);
-        links[0].as_str().to_owned()
-    };
+impl AwsRuleWrapper<SendEmailInput> {
+    pub fn new_send_email_wrapper() -> Self {
+        Self {
+            received_requests: Arc::new(Mutex::new(RefCell::new(Vec::new()))),
+        }
+    }
 
-    mock!(SesClient::send_email)
-        .match_requests(move |req| {
-            let is_correct_destination = req
-                .destination()
-                .unwrap()
-                .to_addresses()
-                .contains(&email.to_string());
-            let content = req.content().unwrap().simple().unwrap();
-            let is_correct_subject = content.subject().unwrap().data().contains("Welcome");
+    pub fn send_any_email_rule(&self) -> Rule {
+        self.create_mock_rule(|_| true)
+    }
 
-            let body = content.body().unwrap();
+    pub fn assert_correct_destination(req: &SendEmailInput, email: &str) {
+        let is_correct_destination = req
+            .destination()
+            .unwrap()
+            .to_addresses()
+            .contains(&email.to_string());
+        assert!(is_correct_destination);
+    }
 
-            let body_html = body.html().unwrap().data();
-            let body_text = body.text().unwrap().data();
+    pub fn assert_correct_subject(req: &SendEmailInput, expected_subject: &str) {
+        let content = req.content().unwrap().simple().unwrap();
+        let is_correct_subject = content.subject().unwrap().data().contains(expected_subject);
+        assert!(is_correct_subject);
+    }
 
-            let is_correct_body = body_text.contains("Welcome to our newsletter!");
+    pub fn assert_correct_body_text(req: &SendEmailInput, expected_subject: &str) {
+        let is_correct_body_text = Self::request_body_text(req).contains(expected_subject);
+        assert!(is_correct_body_text);
+    }
 
-            let body_html_link = get_link(body_html);
-            let body_text_link = get_link(body_text);
+    pub fn expect_one_request(&self) -> SendEmailInput {
+        let received_requests = self.received_requests.lock().unwrap().borrow().clone();
+        assert_eq!(received_requests.len(), 1);
+        received_requests.first().unwrap().clone()
+    }
 
-            let is_identical_links = body_html_link == body_text_link;
+    fn create_mock_rule<F>(&self, matcher: F) -> Rule
+    where
+        F: Fn(&SendEmailInput) -> bool + Send + Sync + 'static,
+    {
+        let received_requests = Arc::clone(&self.received_requests);
+        mock!(SesClient::send_email)
+            .match_requests(move |req| {
+                received_requests
+                    .lock()
+                    .unwrap()
+                    .borrow_mut()
+                    .push(req.clone());
+                matcher(req)
+            })
+            .then_output(|| SendEmailOutput::builder().build())
+    }
 
-            is_correct_destination && is_correct_subject && is_correct_body && is_identical_links
-        })
-        .then_output(|| {
-            SendEmailOutput::builder()
-                .message_id("newsletter-email")
-                .build()
-        })
+    fn request_body_text(req: &SendEmailInput) -> &str {
+        Self::request_body(req).text().unwrap().data()
+    }
+
+    fn request_body(req: &SendEmailInput) -> &Body {
+        req.content().unwrap().simple().unwrap().body().unwrap()
+    }
 }

@@ -123,6 +123,8 @@ export class CodePipelineStack extends cdk.Stack {
           TASK_DEF_HC_TIMEOUT: { value: taskDefConfig.healthCheck.timeoutSec },
           TASK_DEF_HC_START_PERIOD: { value: taskDefConfig.healthCheck.startPeriodSec },
 
+          TASK_DEF_APP_BASE_URL: { value: 'https://there-is-no-such-domain.com' }, // TODO get the real url
+
           TASK_DEF_DB_USERNAME: { value: rdsProps.credentials.username },
           TASK_DEF_DB_HOST: { value: rdsProps.address },
           TASK_DEF_DB_PORT: { value: rdsProps.port },

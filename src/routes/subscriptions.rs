@@ -1,11 +1,11 @@
 use actix_web::{web, HttpResponse};
 use chrono::Utc;
-use serde_json::json;
 use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::domain::{NewSubscriber, SubscriberEmail, SubscriberName};
 use crate::email::email_client::{EmailClient, EmailService};
+use crate::startup::ApplicationBaseUrl;
 
 #[derive(serde::Deserialize)]
 pub struct FormData {
@@ -25,7 +25,7 @@ impl TryFrom<FormData> for NewSubscriber {
 
 #[tracing::instrument(
     name = "Adding a new subscriber",
-    skip(form, pool, email_service, email_client),
+    skip(form, pool, email_service, email_client, base_url),
     fields(
         subscriber_email = %form.email,
         subscriber_name = %form.name
@@ -36,6 +36,7 @@ pub async fn subscribe(
     pool: web::Data<PgPool>,
     email_service: web::Data<EmailService>,
     email_client: web::Data<dyn EmailClient>,
+    base_url: web::Data<ApplicationBaseUrl>,
 ) -> HttpResponse {
     let new_subscriber = match form.0.try_into() {
         Ok(form) => form,
@@ -47,11 +48,15 @@ pub async fn subscribe(
         return HttpResponse::InternalServerError().finish();
     }
 
-    let send_confirmation_email_result =
-        send_confirmation_email(new_subscriber, &email_service, email_client.get_ref()).await;
-
-    match send_confirmation_email_result {
-        Ok(message_id) => HttpResponse::Ok().json(json!({"message_id": message_id})),
+    match send_confirmation_email(
+        new_subscriber,
+        &email_service,
+        email_client.get_ref(),
+        &base_url.0,
+    )
+    .await
+    {
+        Ok(_) => HttpResponse::Ok().finish(),
         Err(_) => HttpResponse::InternalServerError().finish(),
     }
 }
@@ -87,8 +92,12 @@ async fn send_confirmation_email(
     new_subscriber: NewSubscriber,
     email_service: &EmailService,
     email_client: &dyn EmailClient,
-) -> Result<String, String> {
-    let confirmation_link = "https://there-is-no-such-domain.com/subscriptions/confirm";
+    base_url: &str,
+) -> Result<(), String> {
+    let confirmation_link = format!(
+        "{}/subscriptions/confirm?subscription_token=mytoken",
+        base_url
+    );
 
     let html_content = &format!(
         "Welcome to our newsletter!<br />\

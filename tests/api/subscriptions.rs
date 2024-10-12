@@ -1,12 +1,13 @@
 use crate::api::helpers::{spawn_app, TestAppBootstrap};
-use crate::aws_ses_rules::{send_any_email_rule, send_confirmation_email_with_a_link_rule};
+use crate::aws_ses_rules::AwsRuleWrapper;
 
 #[tokio::test]
 async fn subscribe_returns_a_200_for_valid_form_data() {
     // Arrange
     let body = "name=le guin&email=ursula_le_guin@gmail.com".to_string();
 
-    let send_any_email_rule = send_any_email_rule();
+    let aws_rule_wrapper = AwsRuleWrapper::new_send_email_wrapper();
+    let send_any_email_rule = aws_rule_wrapper.send_any_email_rule();
 
     let app = TestAppBootstrap::builder()
         .aws_email_client_rules(&[send_any_email_rule])
@@ -27,7 +28,8 @@ async fn subscribe_persists_the_new_subscriber() {
     let name = "le guin";
     let body = format!("name={}&email={}", name, email);
 
-    let send_any_email_rule = send_any_email_rule();
+    let aws_rule_wrapper = AwsRuleWrapper::new_send_email_wrapper();
+    let send_any_email_rule = aws_rule_wrapper.send_any_email_rule();
 
     let app = TestAppBootstrap::builder()
         .aws_email_client_rules(&[send_any_email_rule])
@@ -50,17 +52,16 @@ async fn subscribe_persists_the_new_subscriber() {
 }
 
 #[tokio::test]
-async fn subscribe_sends_confirmation_email_with_a_link() {
+async fn subscribe_sends_a_confirmation_email_with_a_link() {
     // Arrange
     let email = "ursula_le_guin@gmail.com";
     let body = format!("name=le guin&email={}", email);
-    let message_id = "newsletter-email";
 
-    let send_confirmation_email_with_a_link_rule =
-        send_confirmation_email_with_a_link_rule(email.to_string());
+    let aws_rule_wrapper = AwsRuleWrapper::new_send_email_wrapper();
+    let send_any_email_rule = aws_rule_wrapper.send_any_email_rule();
 
     let app = TestAppBootstrap::builder()
-        .aws_email_client_rules(&[send_confirmation_email_with_a_link_rule])
+        .aws_email_client_rules(&[send_any_email_rule])
         .spawn_app()
         .await;
 
@@ -69,8 +70,14 @@ async fn subscribe_sends_confirmation_email_with_a_link() {
 
     // Assert
     assert_eq!(200, response.status().as_u16());
-    let response_body: serde_json::Value = response.json().await.unwrap();
-    assert_eq!(response_body["message_id"], message_id);
+
+    let request = aws_rule_wrapper.expect_one_request();
+    AwsRuleWrapper::assert_correct_destination(&request, email);
+    AwsRuleWrapper::assert_correct_subject(&request, "Welcome");
+    AwsRuleWrapper::assert_correct_body_text(&request, "Welcome to our newsletter!");
+
+    let confirmation_links = app.extract_confirmation_links(&request);
+    assert_eq!(confirmation_links.plain_text, confirmation_links.html)
 }
 
 #[tokio::test]

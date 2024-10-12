@@ -18,7 +18,7 @@ impl EmailService {
         subject: &str,
         html_content: &str,
         text_content: &str,
-    ) -> Result<String, String> {
+    ) -> Result<(), String> {
         email_client
             .send_email(
                 &self.sender_email,
@@ -40,7 +40,7 @@ pub trait EmailClient: Sync + Send {
         subject: &str,
         html_content: &str,
         text_content: &str,
-    ) -> Result<String, String>;
+    ) -> Result<(), String>;
 }
 
 #[async_trait::async_trait]
@@ -70,7 +70,7 @@ mod tests {
                 subject: &str,
                 html_content: &str,
                 text_content: &str,
-            ) -> Result<String, String>;
+            ) -> Result<(), String>;
         }
     }
 
@@ -82,7 +82,6 @@ mod tests {
         let subject = Paragraph(1..10).fake::<String>();
         let text_content = Paragraph(1..10).fake::<String>();
         let html_content = format!("<p>{}</p>", text_content);
-        let message_id = "message-id";
 
         let mut mock_email_client = MockEmailClient::new();
 
@@ -95,7 +94,7 @@ mod tests {
                 eq(html_content.clone()),
                 eq(text_content.clone()),
             )
-            .returning(|_, _, _, _, _| Ok(message_id.to_string()));
+            .returning(|_, _, _, _, _| Ok(()));
 
         let email_service = EmailService::new(sender_email.clone());
 
@@ -112,6 +111,5 @@ mod tests {
 
         // Assert
         assert_ok!(&result);
-        assert_eq!(result.unwrap(), message_id);
     }
 }

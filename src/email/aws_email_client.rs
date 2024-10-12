@@ -21,7 +21,7 @@ impl EmailClient for SesClient {
         subject: &str,
         html_content: &str,
         text_content: &str,
-    ) -> Result<String, String> {
+    ) -> Result<(), String> {
         let destination = Destination::builder()
             .to_addresses(recipient_email.as_ref())
             .build();
@@ -47,7 +47,7 @@ impl EmailClient for SesClient {
             .await;
 
         match result {
-            Ok(out) => Ok(out.message_id.unwrap_or("success".to_string())),
+            Ok(_) => Ok(()),
             Err(e) => Err(format!("Failed to send email: {}", e)),
         }
     }

@@ -1,7 +1,7 @@
 use crate::bootstrap::Dependencies;
 use crate::configuration::{DatabaseSettings, Settings};
 use crate::email::email_client::{EmailClient, EmailService};
-use crate::routes::{health_check, subscribe};
+use crate::routes::{confirm, health_check, subscribe};
 use actix_web::dev::Server;
 use actix_web::{web, App, HttpServer};
 use sqlx::postgres::PgPoolOptions;
@@ -45,6 +45,7 @@ impl Application {
             connection_pool,
             email_service,
             dependencies.email_client,
+            configuration.application.base_url,
         )?;
 
         Ok(Self { port, server })
@@ -59,23 +60,29 @@ impl Application {
     }
 }
 
+pub struct ApplicationBaseUrl(pub String);
+
 pub fn run(
     listener: TcpListener,
     db_pool: PgPool,
     email_service: EmailService,
     email_client: Arc<dyn EmailClient>,
+    base_url: String,
 ) -> Result<Server, std::io::Error> {
     let db_pool = web::Data::new(db_pool);
     let email_service = web::Data::new(email_service);
     let email_client: web::Data<dyn EmailClient> = web::Data::from(email_client.clone());
+    let base_url = web::Data::new(ApplicationBaseUrl(base_url));
     let server = HttpServer::new(move || {
         App::new()
             .wrap(TracingLogger::default())
             .route("/health_check", web::get().to(health_check))
             .route("/subscriptions", web::post().to(subscribe))
+            .route("/subscriptions/confirm", web::get().to(confirm))
             .app_data(db_pool.clone())
             .app_data(email_service.clone())
             .app_data(email_client.clone())
+            .app_data(base_url.clone())
     })
     .listen(listener)?
     .run();
