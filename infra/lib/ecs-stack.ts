@@ -54,6 +54,8 @@ export class EcsStack extends cdk.Stack {
         },
       ],
       environment: {
+        APP_APPLICATION__BASE_URL: "https://there-is-no-such-domain.com", // TODO get the real url
+
         APP_DATABASE__USERNAME: rdsProps.credentials.username,
         APP_DATABASE__HOST: rdsProps.address,
         APP_DATABASE__PORT: rdsProps.port.toString(),

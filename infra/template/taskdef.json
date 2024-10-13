@@ -27,6 +27,10 @@
   "memory": "<TASK_DEF_MEM_LIMIT_MIB>",
   "environment": [
     {
+      "name": "APP_APPLICATION__BASE_URL",
+      "value": "<TASK_DEF_APP_BASE_URL>"
+    },
+    {
       "name": "APP_DATABASE__USERNAME",
       "value": "<TASK_DEF_DB_USERNAME>"
     },

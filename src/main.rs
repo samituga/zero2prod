@@ -1,3 +1,4 @@
+use zero2prod::bootstrap::build_dependencies;
 use zero2prod::configuration::get_configuration;
 use zero2prod::startup::Application;
 use zero2prod::telemetry::{get_subscriber, init_subscriber};
@@ -8,7 +9,8 @@ async fn main() -> Result<(), std::io::Error> {
     init_subscriber(telemetry_subscriber);
 
     let configuration = get_configuration().expect("Failed to read configuration.");
-    let server = Application::build(configuration).await?;
+    let dependencies = build_dependencies(&configuration).await;
+    let server = Application::build(configuration, dependencies).await?;
 
     server.run_until_stopped().await?;
     Ok(())

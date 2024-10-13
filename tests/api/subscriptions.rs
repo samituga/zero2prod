@@ -1,23 +1,83 @@
-use crate::helpers::spawn_app;
+use crate::api::helpers::{spawn_app, TestAppBootstrap};
+use crate::aws_ses_rules::AwsRuleWrapper;
 
 #[tokio::test]
 async fn subscribe_returns_a_200_for_valid_form_data() {
     // Arrange
-    let app = spawn_app().await;
-    let body = "name=le%20guin&email=ursula_le_guin%40gmail.com";
+    let body = "name=le guin&email=ursula_le_guin@gmail.com".to_string();
+
+    let aws_rule_wrapper = AwsRuleWrapper::new_send_email_wrapper();
+    let send_any_email_rule = aws_rule_wrapper.send_any_email_rule();
+
+    let app = TestAppBootstrap::builder()
+        .aws_email_client_rules(&[send_any_email_rule])
+        .spawn_app()
+        .await;
 
     // Act
-    let response = app.post_subscriptions(body.into()).await;
+    let response = app.post_subscriptions(body).await;
+
+    // Assert
+    assert_eq!(200, response.status().as_u16());
+}
+
+#[tokio::test]
+async fn subscribe_persists_the_new_subscriber() {
+    // Arrange
+    let email = "ursula_le_guin@gmail.com";
+    let name = "le guin";
+    let body = format!("name={}&email={}", name, email);
+
+    let aws_rule_wrapper = AwsRuleWrapper::new_send_email_wrapper();
+    let send_any_email_rule = aws_rule_wrapper.send_any_email_rule();
+
+    let app = TestAppBootstrap::builder()
+        .aws_email_client_rules(&[send_any_email_rule])
+        .spawn_app()
+        .await;
+
+    // Act
+    let response = app.post_subscriptions(body).await;
 
     // Assert
     assert_eq!(200, response.status().as_u16());
 
-    let saved = sqlx::query!("SELECT email, name FROM subscriptions",)
+    let saved = sqlx::query!("SELECT email, name, status FROM subscriptions",)
         .fetch_one(&app.db_pool)
         .await
         .expect("Failed to fetch saved subscription.");
-    assert_eq!(saved.email, "ursula_le_guin@gmail.com");
-    assert_eq!(saved.name, "le guin");
+    assert_eq!(saved.email, email);
+    assert_eq!(saved.name, name);
+    assert_eq!(saved.status, "pending_confirmation");
+}
+
+#[tokio::test]
+async fn subscribe_sends_a_confirmation_email_with_a_link() {
+    // Arrange
+    let email = "ursula_le_guin@gmail.com";
+    let body = format!("name=le guin&email={}", email);
+
+    let aws_rule_wrapper = AwsRuleWrapper::new_send_email_wrapper();
+    let send_any_email_rule = aws_rule_wrapper.send_any_email_rule();
+
+    let app = TestAppBootstrap::builder()
+        .aws_email_client_rules(&[send_any_email_rule])
+        .spawn_app()
+        .await;
+
+    // Act
+    let response = app.post_subscriptions(body).await;
+
+    // Assert
+    assert_eq!(200, response.status().as_u16());
+
+    let request = aws_rule_wrapper.expect_one_request();
+    AwsRuleWrapper::assert_correct_destination(&request, email);
+    AwsRuleWrapper::assert_correct_subject(&request, "Welcome");
+    AwsRuleWrapper::assert_correct_body_text(&request, "Welcome to our newsletter!");
+
+    let confirmation_links = app.extract_confirmation_links(&request);
+    assert_eq!(confirmation_links.plain_text, confirmation_links.html)
 }
 
 #[tokio::test]
