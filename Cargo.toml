@@ -13,6 +13,7 @@ name = "zero2prod"
 
 [dependencies]
 actix-web = "4"
+anyhow = "1.0.89"
 async-trait = "0.1.80"
 aws-config = "1.5.8"
 aws-sdk-sesv2 = { version = "1.33.0", features = ["test-util"] }
