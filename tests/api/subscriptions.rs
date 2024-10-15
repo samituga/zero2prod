@@ -125,3 +125,28 @@ async fn subscribe_returns_400_when_fields_are_present_but_invalid() {
         )
     }
 }
+
+#[tokio::test]
+async fn subscribe_fails_if_there_is_a_fatal_database_error() {
+    // Arrange
+    let body = "name=le guin&email=ursula_le_guin@gmail.com".to_string();
+
+    let aws_rule_wrapper = AwsRuleWrapper::new_send_email_wrapper();
+    let send_any_email_rule = aws_rule_wrapper.send_any_email_rule();
+
+    let app = TestAppBootstrap::builder()
+        .aws_email_client_rules(&[send_any_email_rule])
+        .spawn_app()
+        .await;
+
+    sqlx::query("ALTER TABLE subscription_tokens DROP COLUMN subscription_token")
+        .execute(&app.db_pool)
+        .await
+        .unwrap();
+
+    // Act
+    let response = app.post_subscriptions(body).await;
+
+    // Assert
+    assert_eq!(500, response.status().as_u16());
+}
