@@ -1,6 +1,6 @@
 use crate::domain::{Email, SubscriberEmail};
-use std::error::Error;
-use std::fmt::{Display, Formatter};
+use crate::routes::error_chain_fmt;
+use std::fmt::{Debug, Formatter};
 
 pub struct EmailService {
     sender_email: Email,
@@ -30,6 +30,7 @@ impl EmailService {
                 text_content,
             )
             .await
+            .map_err(EmailClientError::SendEmailError)
     }
 }
 
@@ -42,7 +43,7 @@ pub trait EmailClient: Sync + Send {
         subject: &str,
         html_content: &str,
         text_content: &str,
-    ) -> Result<(), EmailClientError>;
+    ) -> Result<(), anyhow::Error>;
 }
 
 #[async_trait::async_trait]
@@ -50,19 +51,17 @@ pub trait EmailClientProvider<T: EmailClient> {
     async fn email_client(&self) -> T;
 }
 
-// TODO improve errors here
-#[derive(Debug)]
+#[derive(thiserror::Error)]
 pub enum EmailClientError {
-    SendEmailError(String),
+    #[error(transparent)]
+    SendEmailError(#[from] anyhow::Error),
 }
 
-impl Display for EmailClientError {
+impl Debug for EmailClientError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Error sending email")
+        error_chain_fmt(self, f)
     }
 }
-
-impl Error for EmailClientError {}
 
 #[cfg(test)]
 mod tests {
@@ -85,7 +84,7 @@ mod tests {
                 subject: &str,
                 html_content: &str,
                 text_content: &str,
-            ) -> Result<(), EmailClientError>;
+            ) -> Result<(), anyhow::Error>;
         }
     }
 

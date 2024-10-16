@@ -1,7 +1,7 @@
 use crate::configuration::AwsSettings;
 use crate::domain::{Email, SubscriberEmail};
-use crate::email::email_client::EmailClientError::SendEmailError;
-use crate::email::email_client::{EmailClient, EmailClientError, EmailClientProvider};
+use crate::email::email_client::{EmailClient, EmailClientProvider};
+use anyhow::Context;
 use aws_config::timeout::TimeoutConfig;
 use aws_config::{BehaviorVersion, Region};
 use aws_sdk_sesv2::config::Credentials;
@@ -21,7 +21,7 @@ impl EmailClient for SesClient {
         subject: &str,
         html_content: &str,
         text_content: &str,
-    ) -> Result<(), EmailClientError> {
+    ) -> Result<(), anyhow::Error> {
         let destination = Destination::builder()
             .to_addresses(recipient_email.as_ref())
             .build();
@@ -46,9 +46,9 @@ impl EmailClient for SesClient {
             .send()
             .await;
 
-        match result {
+        match result.context("Aws client failed to send email.") {
             Ok(_) => Ok(()),
-            Err(e) => Err(SendEmailError(format!("Failed to send email: {}", e))),
+            Err(e) => Err(e),
         }
     }
 }

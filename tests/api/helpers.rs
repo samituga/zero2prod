@@ -1,79 +1,47 @@
+use crate::aws_ses_rules::{aws_client_interceptor, aws_ses_client, AwsRequestsWrapper};
 use aws_sdk_sesv2::operation::send_email::SendEmailInput;
-use aws_smithy_mocks_experimental::{mock_client, Rule, RuleMode};
 use secrecy::Secret;
 use sqlx::{Connection, Executor, PgConnection, PgPool};
 use std::sync::{Arc, LazyLock};
 use uuid::Uuid;
 use zero2prod::bootstrap::Dependencies;
 use zero2prod::configuration::{get_configuration, DatabaseSettings};
-use zero2prod::email::email_client::EmailClient;
 use zero2prod::startup::{get_connection_pool, Application};
 use zero2prod::telemetry::{get_subscriber, init_subscriber};
 
-pub struct TestAppBootstrap {
-    email_client: Arc<dyn EmailClient>,
-}
+pub async fn spawn_app() -> TestApp {
+    LazyLock::force(&TRACING);
 
-impl TestAppBootstrap {
-    pub fn builder() -> TestAppBootstrapBuilder {
-        TestAppBootstrapBuilder::new()
-    }
+    let configuration = {
+        let mut configuration = get_configuration().expect("Failed to read configuration.");
+        configuration.database.database_name = Uuid::new_v4().to_string();
+        configuration.application.port = 0;
+        configuration
+    };
 
-    pub async fn spawn_app(self) -> TestApp {
-        LazyLock::force(&TRACING);
+    create_database(&configuration.database).await;
 
-        let configuration = {
-            let mut configuration = get_configuration().expect("Failed to read configuration.");
-            configuration.database.database_name = Uuid::new_v4().to_string();
-            configuration.application.port = 0;
-            configuration
-        };
+    let aws_client_interceptor = aws_client_interceptor();
+    let requests = aws_client_interceptor.captured_requests();
+    let aws_ses_client = aws_ses_client(aws_client_interceptor);
 
-        create_database(&configuration.database).await;
+    let dependencies = Dependencies {
+        email_client: Arc::new(aws_ses_client),
+    };
 
-        let dependencies = Dependencies {
-            email_client: self.email_client,
-        };
-
-        let application = Application::build(configuration.clone(), dependencies)
-            .await
-            .expect("Failed to build application.");
-        let application_port = application.port();
-        let address = format!("http://127.0.0.1:{}", application_port);
-
-        let _ = tokio::spawn(application.run_until_stopped());
-
-        TestApp {
-            address,
-            port: application_port,
-            db_pool: get_connection_pool(&configuration.database),
-        }
-    }
-}
-
-pub struct TestAppBootstrapBuilder {
-    email_client: Option<Arc<dyn EmailClient>>,
-}
-
-impl TestAppBootstrapBuilder {
-    pub fn new() -> Self {
-        Self { email_client: None }
-    }
-
-    pub fn aws_email_client_rules(mut self, rules: &[Rule]) -> Self {
-        let client: Arc<dyn EmailClient> =
-            Arc::new(mock_client!(aws_sdk_sesv2, RuleMode::Sequential, rules));
-
-        self.email_client = Some(client);
-        self
-    }
-
-    pub async fn spawn_app(self) -> TestApp {
-        TestAppBootstrap {
-            email_client: self.email_client.expect("email_client is required"),
-        }
-        .spawn_app()
+    let application = Application::build(configuration.clone(), dependencies)
         .await
+        .expect("Failed to build application.");
+    let application_port = application.port();
+    let address = format!("http://127.0.0.1:{}", application_port);
+
+    let _ = tokio::spawn(application.run_until_stopped());
+
+    TestApp {
+        address,
+        port: application_port,
+        db_pool: get_connection_pool(&configuration.database),
+        aws_request_wrapper: AwsRequestsWrapper::new(requests),
     }
 }
 
@@ -81,6 +49,7 @@ pub struct TestApp {
     pub address: String,
     pub port: u16,
     pub db_pool: PgPool,
+    pub aws_request_wrapper: AwsRequestsWrapper,
 }
 
 pub struct ConfirmationLinks {
@@ -134,13 +103,6 @@ static TRACING: LazyLock<()> = LazyLock::new(|| {
         init_subscriber(subscriber);
     };
 });
-
-pub async fn spawn_app() -> TestApp {
-    TestAppBootstrap::builder()
-        .aws_email_client_rules(&[])
-        .spawn_app()
-        .await
-}
 
 async fn create_database(config: &DatabaseSettings) {
     let maintenance_settings = DatabaseSettings {

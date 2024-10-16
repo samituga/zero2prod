@@ -54,6 +54,7 @@ features = [
 
 [dev-dependencies]
 aws-smithy-mocks-experimental = "0.2.1"
+aws-smithy-runtime-api = "1.7.2"
 claims = "0.7.1"
 fake = "2.9.2"
 linkify = "0.10.0"

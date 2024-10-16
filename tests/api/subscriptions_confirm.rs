@@ -1,5 +1,4 @@
-use crate::api::helpers::{spawn_app, TestAppBootstrap};
-use crate::aws_ses_rules::AwsRuleWrapper;
+use crate::api::helpers::spawn_app;
 
 #[tokio::test]
 async fn confirmations_without_token_are_rejected_with_a_400() {
@@ -21,17 +20,10 @@ async fn the_link_by_subscribe_returns_a_200_if_called() {
     let email = "ursula_le_guin@gmail.com";
     let body = format!("name=le guin&email={}", email);
 
-    let aws_rule_wrapper = AwsRuleWrapper::new_send_email_wrapper();
-    let send_any_email_rule = aws_rule_wrapper.send_any_email_rule();
-
-    let app = TestAppBootstrap::builder()
-        .aws_email_client_rules(&[send_any_email_rule])
-        .spawn_app()
-        .await;
-
+    let app = spawn_app().await;
     app.post_subscriptions(body).await;
 
-    let send_confirmation_email_with_a_link_request = aws_rule_wrapper.expect_one_request();
+    let send_confirmation_email_with_a_link_request = app.aws_request_wrapper.expect_one_request();
     let confirmation_links =
         app.extract_confirmation_links(&send_confirmation_email_with_a_link_request);
 
@@ -48,17 +40,11 @@ async fn clicking_on_the_confirmation_link_confirms_a_subscriber() {
     let email = "ursula_le_guin@gmail.com";
     let body = format!("name=le guin&email={}", email);
 
-    let aws_rule_wrapper = AwsRuleWrapper::new_send_email_wrapper();
-    let send_any_email_rule = aws_rule_wrapper.send_any_email_rule();
-
-    let app = TestAppBootstrap::builder()
-        .aws_email_client_rules(&[send_any_email_rule])
-        .spawn_app()
-        .await;
+    let app = spawn_app().await;
 
     app.post_subscriptions(body).await;
 
-    let send_confirmation_email_with_a_link_request = aws_rule_wrapper.expect_one_request();
+    let send_confirmation_email_with_a_link_request = app.aws_request_wrapper.expect_one_request();
 
     let confirmation_links =
         app.extract_confirmation_links(&send_confirmation_email_with_a_link_request);

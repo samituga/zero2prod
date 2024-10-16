@@ -1,24 +1,22 @@
+use aws_sdk_sesv2::config::interceptors::{
+    BeforeSerializationInterceptorContextMut, FinalizerInterceptorContextMut,
+};
+use aws_sdk_sesv2::config::{ConfigBag, Intercept, Region, RuntimeComponents};
+use aws_sdk_sesv2::error::BoxError;
 use aws_sdk_sesv2::operation::send_email::{SendEmailInput, SendEmailOutput};
 use aws_sdk_sesv2::types::Body;
-use aws_smithy_mocks_experimental::{mock, Rule};
-use std::cell::RefCell;
+use aws_sdk_sesv2::{Client, Config};
+use aws_smithy_runtime_api::client::interceptors::context::Output;
 use std::fmt::Debug;
 use std::sync::{Arc, Mutex};
-use zero2prod::email::aws_email_client::SesClient;
 
-pub struct AwsRuleWrapper<I: Send + Sync + Debug + 'static> {
-    received_requests: Arc<Mutex<RefCell<Vec<I>>>>,
+pub struct AwsRequestsWrapper {
+    requests: Arc<Mutex<Vec<SendEmailInput>>>,
 }
 
-impl AwsRuleWrapper<SendEmailInput> {
-    pub fn new_send_email_wrapper() -> Self {
-        Self {
-            received_requests: Arc::new(Mutex::new(RefCell::new(Vec::new()))),
-        }
-    }
-
-    pub fn send_any_email_rule(&self) -> Rule {
-        self.create_mock_rule(|_| true)
+impl AwsRequestsWrapper {
+    pub fn new(requests: Arc<Mutex<Vec<SendEmailInput>>>) -> Self {
+        Self { requests }
     }
 
     pub fn assert_correct_destination(req: &SendEmailInput, email: &str) {
@@ -42,26 +40,14 @@ impl AwsRuleWrapper<SendEmailInput> {
     }
 
     pub fn expect_one_request(&self) -> SendEmailInput {
-        let received_requests = self.received_requests.lock().unwrap().borrow().clone();
-        assert_eq!(received_requests.len(), 1);
-        received_requests.first().unwrap().clone()
-    }
-
-    fn create_mock_rule<F>(&self, matcher: F) -> Rule
-    where
-        F: Fn(&SendEmailInput) -> bool + Send + Sync + 'static,
-    {
-        let received_requests = Arc::clone(&self.received_requests);
-        mock!(SesClient::send_email)
-            .match_requests(move |req| {
-                received_requests
-                    .lock()
-                    .unwrap()
-                    .borrow_mut()
-                    .push(req.clone());
-                matcher(req)
-            })
-            .then_output(|| SendEmailOutput::builder().build())
+        let requests = self.requests.lock().unwrap().clone();
+        assert_eq!(
+            requests.len(),
+            1,
+            "Expected exactly one request, but got: {:?}",
+            requests.len()
+        );
+        requests.first().unwrap().clone()
     }
 
     fn request_body_text(req: &SendEmailInput) -> &str {
@@ -70,5 +56,76 @@ impl AwsRuleWrapper<SendEmailInput> {
 
     fn request_body(req: &SendEmailInput) -> &Body {
         req.content().unwrap().simple().unwrap().body().unwrap()
+    }
+}
+
+pub fn aws_client_interceptor() -> MockAwsClientInterceptor {
+    MockAwsClientInterceptor::default()
+}
+
+pub fn aws_ses_client(interceptor: MockAwsClientInterceptor) -> Client {
+    Client::from_conf(
+        Config::builder()
+            .with_test_defaults()
+            .region(Region::from_static("us-east-1"))
+            .interceptor(interceptor)
+            .build(),
+    )
+}
+
+// TODO mock responses
+// TODO Capture multiple request types
+#[derive(Debug)]
+pub struct MockAwsClientInterceptor {
+    captured_requests: Arc<Mutex<Vec<SendEmailInput>>>,
+}
+
+impl Default for MockAwsClientInterceptor {
+    fn default() -> Self {
+        Self {
+            captured_requests: Arc::new(Mutex::new(Vec::new())),
+        }
+    }
+}
+
+impl MockAwsClientInterceptor {
+    pub fn captured_requests(&self) -> Arc<Mutex<Vec<SendEmailInput>>> {
+        self.captured_requests.clone()
+    }
+}
+
+impl Intercept for MockAwsClientInterceptor {
+    fn name(&self) -> &'static str {
+        "MockInterceptor"
+    }
+
+    fn modify_before_serialization(
+        &self,
+        context: &mut BeforeSerializationInterceptorContextMut<'_>,
+        _runtime_components: &RuntimeComponents,
+        _cfg: &mut ConfigBag,
+    ) -> Result<(), BoxError> {
+        let input = context.input();
+        if let Some(typed_input) = input.downcast_ref::<SendEmailInput>() {
+            self.captured_requests
+                .lock()
+                .unwrap()
+                .push(typed_input.clone());
+        } else {
+            panic!("Interceptor only handles SendEmailInput for now");
+        }
+        Ok(())
+    }
+
+    fn modify_before_attempt_completion(
+        &self,
+        context: &mut FinalizerInterceptorContextMut<'_>,
+        _runtime_components: &RuntimeComponents,
+        _cfg: &mut ConfigBag,
+    ) -> Result<(), BoxError> {
+        context
+            .inner_mut()
+            .set_output_or_error(Ok(Output::erase(SendEmailOutput::builder().build())));
+        Ok(())
     }
 }

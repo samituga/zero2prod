@@ -212,7 +212,8 @@ impl std::error::Error for StoreTokenError {
     }
 }
 
-fn error_chain_fmt(e: &impl std::error::Error, f: &mut Formatter<'_>) -> std::fmt::Result {
+// TODO move to common file
+pub fn error_chain_fmt(e: &impl std::error::Error, f: &mut Formatter<'_>) -> std::fmt::Result {
     writeln!(f, "{}\n", e)?;
     let mut current = e.source();
     while let Some(cause) = current {
