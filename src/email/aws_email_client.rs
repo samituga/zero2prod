@@ -1,6 +1,6 @@
 use crate::configuration::AwsSettings;
-use crate::domain::{Email, SubscriberEmail};
-use crate::email::email_client::{EmailClient, EmailClientProvider};
+use crate::domain::Email;
+use crate::email::email_client::{EmailClient, EmailClientProvider, SendEmailRequest};
 use anyhow::Context;
 use aws_config::timeout::TimeoutConfig;
 use aws_config::{BehaviorVersion, Region};
@@ -17,21 +17,18 @@ impl EmailClient for SesClient {
     async fn send_email(
         &self,
         sender_email: &Email,
-        recipient_email: &SubscriberEmail,
-        subject: &str,
-        html_content: &str,
-        text_content: &str,
+        send_email_request: SendEmailRequest<'_>,
     ) -> Result<(), anyhow::Error> {
         let destination = Destination::builder()
-            .to_addresses(recipient_email.as_ref())
+            .to_addresses(send_email_request.to.as_ref())
             .build();
 
         let message = Message::builder()
-            .subject(build_content(subject))
+            .subject(build_content(send_email_request.subject))
             .body(
                 Body::builder()
-                    .text(build_content(text_content))
-                    .html(build_content(html_content))
+                    .text(build_content(send_email_request.text_content))
+                    .html(build_content(send_email_request.html_content))
                     .build(),
             )
             .build();
@@ -111,6 +108,7 @@ impl EmailClientProvider<SesClient> for SesClientFactory {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::domain::SubscriberEmail;
     use aws_sdk_sesv2::operation::send_email::{SendEmailError, SendEmailOutput};
     use aws_sdk_sesv2::types::error::BadRequestException;
     use aws_smithy_mocks_experimental::{mock, mock_client, RuleMode};
@@ -124,10 +122,17 @@ mod tests {
     async fn sends_email_with_correct_arguments() {
         // Arrange
         let sender_email = Email::parse(SafeEmail().fake::<String>()).unwrap();
-        let recipient_email = Email::parse(SafeEmail().fake::<String>()).unwrap();
+        let recipient_email = SubscriberEmail::parse(SafeEmail().fake::<String>()).unwrap();
         let subject = Paragraph(1..10).fake::<String>();
+        let html_content = format!("<p>{}</p>", Paragraph(1..10).fake::<String>());
         let text_content = Paragraph(1..10).fake::<String>();
-        let html_content = format!("<p>{}</p>", text_content);
+
+        let request = SendEmailRequest {
+            to: &recipient_email,
+            subject: &subject,
+            html_content: &html_content,
+            text_content: &text_content,
+        };
 
         let recipient_email_string = recipient_email.as_ref().to_string();
 
@@ -138,25 +143,13 @@ mod tests {
                     .to_addresses()
                     .contains(&recipient_email_string)
             })
-            .then_output(|| {
-                SendEmailOutput::builder()
-                    .message_id("newsletter-email")
-                    .build()
-            });
+            .then_output(|| SendEmailOutput::builder().build());
 
         let aws_email_client: &dyn EmailClient =
             &mock_client!(aws_sdk_sesv2, RuleMode::Sequential, &[&mock_send_email]);
 
         // Act
-        let result = aws_email_client
-            .send_email(
-                &sender_email,
-                &recipient_email,
-                &subject,
-                &text_content,
-                &html_content,
-            )
-            .await;
+        let result = aws_email_client.send_email(&sender_email, request).await;
 
         // Assert
         assert_ok!(result);
@@ -166,10 +159,17 @@ mod tests {
     async fn send_email_fails_if_client_returns_err() {
         // Arrange
         let sender_email = Email::parse(SafeEmail().fake::<String>()).unwrap();
-        let recipient_email = Email::parse(SafeEmail().fake::<String>()).unwrap();
+        let recipient_email = SubscriberEmail::parse(SafeEmail().fake::<String>()).unwrap();
         let subject = Paragraph(1..10).fake::<String>();
+        let html_content = format!("<p>{}</p>", Paragraph(1..10).fake::<String>());
         let text_content = Paragraph(1..10).fake::<String>();
-        let html_content = format!("<p>{}</p>", text_content);
+
+        let request = SendEmailRequest {
+            to: &recipient_email,
+            subject: &subject,
+            html_content: &html_content,
+            text_content: &text_content,
+        };
 
         let recipient_email_string = recipient_email.as_ref().to_string();
 
@@ -188,15 +188,7 @@ mod tests {
             &mock_client!(aws_sdk_sesv2, RuleMode::Sequential, &[&mock_send_email]);
 
         // Act
-        let result = aws_email_client
-            .send_email(
-                &sender_email,
-                &recipient_email,
-                &subject,
-                &text_content,
-                &html_content,
-            )
-            .await;
+        let result = aws_email_client.send_email(&sender_email, request).await;
 
         // Assert
         assert_err!(result);

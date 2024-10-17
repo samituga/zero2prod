@@ -39,12 +39,28 @@ impl AwsRequestsWrapper {
         assert!(is_correct_body_text);
     }
 
+    pub fn expect_zero_requests(&self) {
+        let requests = self.requests.lock().unwrap();
+        assert_eq!(
+            requests.len(),
+            0,
+            "Expected zero request from AWS client, but got: {:?}",
+            requests.len()
+        );
+    }
+
+    pub fn expect_one_request_and_remove(&self) -> SendEmailInput {
+        let request = self.expect_one_request();
+        self.requests.lock().unwrap().remove(0);
+        request
+    }
+
     pub fn expect_one_request(&self) -> SendEmailInput {
-        let requests = self.requests.lock().unwrap().clone();
+        let requests = self.requests.lock().unwrap();
         assert_eq!(
             requests.len(),
             1,
-            "Expected exactly one request, but got: {:?}",
+            "Expected exactly one request from AWS client, but got: {:?}",
             requests.len()
         );
         requests.first().unwrap().clone()

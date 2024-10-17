@@ -2,6 +2,14 @@ use crate::domain::{Email, SubscriberEmail};
 use crate::routes::error_chain_fmt;
 use std::fmt::{Debug, Formatter};
 
+#[derive(Debug, PartialEq, Clone)]
+pub struct SendEmailRequest<'a> {
+    pub to: &'a SubscriberEmail,
+    pub subject: &'a str,
+    pub html_content: &'a str,
+    pub text_content: &'a str,
+}
+
 pub struct EmailService {
     sender_email: Email,
 }
@@ -16,19 +24,10 @@ impl EmailService {
     pub async fn send_email(
         &self,
         email_client: &dyn EmailClient,
-        recipient_email: &SubscriberEmail,
-        subject: &str,
-        html_content: &str,
-        text_content: &str,
+        send_email_request: SendEmailRequest<'_>,
     ) -> Result<(), EmailClientError> {
         email_client
-            .send_email(
-                &self.sender_email,
-                recipient_email,
-                subject,
-                html_content,
-                text_content,
-            )
+            .send_email(&self.sender_email, send_email_request)
             .await
             .map_err(EmailClientError::SendEmailError)
     }
@@ -39,10 +38,7 @@ pub trait EmailClient: Sync + Send {
     async fn send_email(
         &self,
         sender_email: &Email,
-        recipient_email: &SubscriberEmail,
-        subject: &str,
-        html_content: &str,
-        text_content: &str,
+        request: SendEmailRequest<'_>,
     ) -> Result<(), anyhow::Error>;
 }
 
@@ -66,25 +62,26 @@ impl Debug for EmailClientError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use async_trait::async_trait;
     use claims::assert_ok;
     use fake::faker::internet::en::SafeEmail;
     use fake::faker::lorem::en::Paragraph;
     use fake::Fake;
-    use mockall::{mock, predicate::*};
 
-    mock! {
-        pub EmailClient {}
-        #[async_trait]
-        impl EmailClient for EmailClient {
-            async fn send_email(
-                &self,
-                sender_email: &Email,
-                recipient_email: &SubscriberEmail,
-                subject: &str,
-                html_content: &str,
-                text_content: &str,
-            ) -> Result<(), anyhow::Error>;
+    struct MockEmailClient<'a> {
+        expected_sender_email: Email,
+        expected_send_email_request: SendEmailRequest<'a>,
+    }
+
+    #[async_trait::async_trait]
+    impl<'a> EmailClient for MockEmailClient<'a> {
+        async fn send_email(
+            &self,
+            sender_email: &Email,
+            send_email_request: SendEmailRequest<'_>,
+        ) -> Result<(), anyhow::Error> {
+            assert_eq!(*sender_email, self.expected_sender_email);
+            assert_eq!(send_email_request, self.expected_send_email_request);
+            Ok(())
         }
     }
 
@@ -92,35 +89,28 @@ mod tests {
     async fn calls_email_client_with_correct_arguments() {
         // Arrange
         let sender_email = Email::parse(SafeEmail().fake::<String>()).unwrap();
-        let recipient_email = Email::parse(SafeEmail().fake::<String>()).unwrap();
+        let recipient_email = SubscriberEmail::parse(SafeEmail().fake::<String>()).unwrap();
         let subject = Paragraph(1..10).fake::<String>();
+        let html_content = format!("<p>{}</p>", Paragraph(1..10).fake::<String>());
         let text_content = Paragraph(1..10).fake::<String>();
-        let html_content = format!("<p>{}</p>", text_content);
 
-        let mut mock_email_client = MockEmailClient::new();
+        let send_email_request = SendEmailRequest {
+            to: &recipient_email,
+            subject: &subject,
+            html_content: &html_content,
+            text_content: &text_content,
+        };
 
-        mock_email_client
-            .expect_send_email()
-            .with(
-                eq(sender_email.clone()),
-                eq(recipient_email.clone()),
-                eq(subject.clone()),
-                eq(html_content.clone()),
-                eq(text_content.clone()),
-            )
-            .returning(|_, _, _, _, _| Ok(()));
+        let mock_email_client = MockEmailClient {
+            expected_sender_email: sender_email.clone(),
+            expected_send_email_request: send_email_request.clone(),
+        };
 
         let email_service = EmailService::new(sender_email.clone());
 
         // Act
         let result = email_service
-            .send_email(
-                &mock_email_client,
-                &recipient_email,
-                subject.as_str(),
-                html_content.as_str(),
-                text_content.as_str(),
-            )
+            .send_email(&mock_email_client, send_email_request)
             .await;
 
         // Assert

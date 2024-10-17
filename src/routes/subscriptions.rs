@@ -10,7 +10,7 @@ use std::fmt::{Debug, Display, Formatter};
 use uuid::Uuid;
 
 use crate::domain::{NewSubscriber, SubscriberEmail, SubscriberName};
-use crate::email::email_client::{EmailClient, EmailClientError, EmailService};
+use crate::email::email_client::{EmailClient, EmailClientError, EmailService, SendEmailRequest};
 use crate::startup::ApplicationBaseUrl;
 
 #[derive(serde::Deserialize)]
@@ -170,14 +170,15 @@ async fn send_confirmation_email(
         confirmation_link
     );
 
+    let send_email_request = SendEmailRequest {
+        to: &new_subscriber.email,
+        subject: "Welcome",
+        html_content,
+        text_content,
+    };
+
     email_service
-        .send_email(
-            email_client,
-            &new_subscriber.email,
-            "Welcome",
-            html_content,
-            text_content,
-        )
+        .send_email(email_client, send_email_request)
         .await
 }
 
