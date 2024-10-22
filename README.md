@@ -24,9 +24,11 @@ pre-commit
 ```shell
 #linux
 pip install pre-commit
+pre-commit install
 
 #macOS (brew)
 brew install pre-commit
+pre-commit install
 ```
 
 Format code using rust formatter

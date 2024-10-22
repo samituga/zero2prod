@@ -39,6 +39,11 @@ pub struct Content {
     text: String,
 }
 
+#[tracing::instrument(
+    name = "Publishing a newsletter",
+    skip(body, pool, email_service, email_client),
+    fields(newsletter_title = %body.title)
+)]
 pub async fn publish_newsletter(
     body: web::Json<BodyData>,
     pool: web::Data<PgPool>,
@@ -84,15 +89,11 @@ struct ConfirmedSubscriber {
     email: SubscriberEmail,
 }
 
-struct Row {
-    email: String,
-}
-
+#[tracing::instrument(name = "Fetching confirmed subscribers from the database", skip(pool))]
 async fn get_confirmed_subscribers(
     pool: &PgPool,
 ) -> Result<Vec<Result<ConfirmedSubscriber, anyhow::Error>>, anyhow::Error> {
-    let rows = sqlx::query_as!(
-        Row,
+    let rows = sqlx::query!(
         r#"
         SELECT email
         FROM subscriptions

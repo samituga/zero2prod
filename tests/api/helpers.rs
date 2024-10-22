@@ -89,6 +89,15 @@ impl TestApp {
 
         ConfirmationLinks { html, plain_text }
     }
+
+    pub async fn publish_newsletter(&self, body: serde_json::Value) -> reqwest::Response {
+        reqwest::Client::new()
+            .post(format!("{}/newsletters", &self.address))
+            .json(&body)
+            .send()
+            .await
+            .expect("Failed to execute request.")
+    }
 }
 
 static TRACING: LazyLock<()> = LazyLock::new(|| {
