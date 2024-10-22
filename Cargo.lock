@@ -4103,6 +4103,7 @@ dependencies = [
  "aws-sdk-sesv2",
  "aws-smithy-mocks-experimental",
  "aws-smithy-runtime-api",
+ "base64 0.22.1",
  "chrono",
  "claims",
  "config",
