@@ -72,6 +72,17 @@ Build docker image
 docker build --tag zero2pod --file Dockerfile .
 ```
 
+Use bunyan to format logs
+
+```shell
+cargo install bunyan
+
+# Example
+TEST_LOG=true cargo t test_name | bunyan
+```
+
+
+
 INFRA, after applying the terraform config, it's necessary to manually update the codestar connection to GitHub
 under Developer Tools > Connections
 
