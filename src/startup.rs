@@ -1,7 +1,9 @@
 use crate::bootstrap::Dependencies;
 use crate::configuration::{DatabaseSettings, Settings};
 use crate::email::email_client::{EmailClient, EmailService};
-use crate::routes::{confirm, health_check, publish_newsletter, subscribe};
+use crate::routes::{
+    confirm, health_check, home, login, login_form, publish_newsletter, subscribe,
+};
 use actix_web::dev::Server;
 use actix_web::{web, App, HttpServer};
 use http::Uri;
@@ -77,6 +79,9 @@ pub fn run(
     let server = HttpServer::new(move || {
         App::new()
             .wrap(TracingLogger::default())
+            .route("/", web::get().to(home))
+            .route("/login", web::get().to(login_form))
+            .route("/login", web::post().to(login))
             .route("/health_check", web::get().to(health_check))
             .route("/subscriptions", web::post().to(subscribe))
             .route("/subscriptions/confirm", web::get().to(confirm))

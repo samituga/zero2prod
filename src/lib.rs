@@ -1,3 +1,4 @@
+pub mod authentication;
 pub mod bootstrap;
 pub mod configuration;
 pub mod domain;
