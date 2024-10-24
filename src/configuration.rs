@@ -23,6 +23,7 @@ pub struct ApplicationSettings {
     pub host: String,
     #[serde(deserialize_with = "deserialize_base_url")]
     pub base_url: Uri,
+    pub hmac_secret: Secret<String>,
 }
 
 fn deserialize_base_url<'de, D>(deserializer: D) -> Result<Uri, D::Error>

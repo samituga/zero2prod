@@ -1,7 +1,10 @@
 use crate::authentication::{validate_credentials, AuthError, Credentials};
 use crate::routes::error_chain_fmt;
+use actix_web::error::InternalError;
+use actix_web::http::header::LOCATION;
 use actix_web::http::StatusCode;
 use actix_web::{web, HttpResponse, ResponseError};
+use actix_web_flash_messages::FlashMessage;
 use secrecy::Secret;
 use sqlx::PgPool;
 use std::fmt::Debug;
@@ -19,29 +22,36 @@ pub struct FormData {
 pub async fn login(
     form: web::Form<FormData>,
     pool: web::Data<PgPool>,
-) -> Result<HttpResponse, LoginError> {
+) -> Result<HttpResponse, InternalError<LoginError>> {
     let credentials = Credentials {
         username: form.0.username,
         password: form.0.password,
     };
+    match validate_credentials(credentials, &pool).await {
+        Ok(user_id) => {
+            tracing::Span::current().record("user_id", tracing::field::display(&user_id));
+            Ok(HttpResponse::SeeOther()
+                .insert_header(("location", "/"))
+                .finish())
+        }
+        Err(e) => {
+            let e = match e {
+                AuthError::InvalidCredentials(_) => LoginError::AuthError(e.into()),
+                AuthError::UnexpectedError(_) => LoginError::UnexpectedError(e.into()),
+            };
+            FlashMessage::error(e.to_string()).send();
+            let response = HttpResponse::SeeOther()
+                .insert_header((LOCATION, "/login"))
+                .finish();
 
-    let user_id = validate_credentials(credentials, &pool)
-        .await
-        .map_err(|e| match e {
-            AuthError::InvalidCredentials(_) => LoginError::AuthError(e.into()),
-            AuthError::UnexpectedError(_) => LoginError::UnexpectedError(e.into()),
-        })?;
-
-    tracing::Span::current().record("user_id", tracing::field::display(&user_id));
-
-    Ok(HttpResponse::SeeOther()
-        .insert_header(("location", "/"))
-        .finish())
+            Err(InternalError::from_response(e, response))
+        }
+    }
 }
 
 #[derive(thiserror::Error)]
 pub enum LoginError {
-    #[error("Invalid credentials.")]
+    #[error("Authentication failed")]
     AuthError(#[source] anyhow::Error),
     #[error("Something went wrong.")]
     UnexpectedError(#[from] anyhow::Error),
