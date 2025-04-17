@@ -1,7 +1,15 @@
-use crate::configuration::Settings;
-use crate::email::aws_email_client::SesClientFactory;
-use crate::email::email_client::{EmailClient, EmailClientProvider};
 use std::sync::Arc;
+
+use crate::{
+    configuration::Settings,
+    email::{
+        aws_email_client::SesClientFactory,
+        email_client::{
+            EmailClient,
+            EmailClientProvider,
+        },
+    },
+};
 
 pub struct Dependencies {
     pub email_client: Arc<dyn EmailClient>,

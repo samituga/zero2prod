@@ -1,4 +1,7 @@
-use crate::api::helpers::{assert_is_redirected_to, spawn_app};
+use crate::api::helpers::{
+    assert_is_redirected_to,
+    spawn_app,
+};
 
 #[tokio::test]
 async fn an_error_flash_message_is_set_on_failure() {

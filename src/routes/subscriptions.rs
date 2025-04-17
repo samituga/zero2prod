@@ -1,17 +1,45 @@
-use actix_web::http::StatusCode;
-use actix_web::{web, HttpResponse, ResponseError};
+use std::fmt::{
+    Debug,
+    Display,
+    Formatter,
+};
+
+use actix_web::{
+    http::StatusCode,
+    web,
+    HttpResponse,
+    ResponseError,
+};
 use anyhow::Context;
 use chrono::Utc;
 use http::Uri;
-use rand::distributions::Alphanumeric;
-use rand::{thread_rng, Rng};
-use sqlx::{Executor, PgPool, Postgres, Transaction};
-use std::fmt::{Debug, Display, Formatter};
+use rand::{
+    distributions::Alphanumeric,
+    thread_rng,
+    Rng,
+};
+use sqlx::{
+    Executor,
+    PgPool,
+    Postgres,
+    Transaction,
+};
 use uuid::Uuid;
 
-use crate::domain::{NewSubscriber, SubscriberEmail, SubscriberName};
-use crate::email::email_client::{EmailClient, EmailClientError, EmailService, SendEmailRequest};
-use crate::startup::ApplicationBaseUrl;
+use crate::{
+    domain::{
+        NewSubscriber,
+        SubscriberEmail,
+        SubscriberName,
+    },
+    email::email_client::{
+        EmailClient,
+        EmailClientError,
+        EmailService,
+        SendEmailRequest,
+    },
+    startup::ApplicationBaseUrl,
+};
 
 #[derive(serde::Deserialize)]
 pub struct FormData {

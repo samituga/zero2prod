@@ -1,12 +1,23 @@
-use crate::domain::SubscriberEmail;
-use crate::environment::ENVIRONMENT;
 use dotenvy::dotenv;
 use http::Uri;
-use secrecy::{ExposeSecret, Secret};
+use secrecy::{
+    ExposeSecret,
+    Secret,
+};
 use serde::Deserialize;
 use serde_aux::field_attributes::deserialize_number_from_string;
-use sqlx::postgres::{PgConnectOptions, PgSslMode};
-use sqlx::ConnectOptions;
+use sqlx::{
+    postgres::{
+        PgConnectOptions,
+        PgSslMode,
+    },
+    ConnectOptions,
+};
+
+use crate::{
+    domain::SubscriberEmail,
+    environment::ENVIRONMENT,
+};
 
 #[derive(serde::Deserialize, Clone)]
 pub struct Settings {

@@ -1,5 +1,7 @@
-use crate::api::helpers::spawn_app;
-use crate::aws_ses_rules::AwsRequestsWrapper;
+use crate::{
+    api::helpers::spawn_app,
+    aws_ses_rules::AwsRequestsWrapper,
+};
 
 #[tokio::test]
 async fn subscribe_returns_a_200_for_valid_form_data() {

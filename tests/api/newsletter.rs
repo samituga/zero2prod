@@ -1,5 +1,10 @@
-use crate::api::helpers::{spawn_app, ConfirmationLinks, TestApp};
 use uuid::Uuid;
+
+use crate::api::helpers::{
+    spawn_app,
+    ConfirmationLinks,
+    TestApp,
+};
 
 #[tokio::test]
 async fn newsletters_are_not_delivered_to_unconfirmed_subscribers() {

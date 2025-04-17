@@ -1,15 +1,40 @@
-use crate::aws_ses_rules::{aws_client_interceptor, aws_ses_client, AwsRequestsWrapper};
-use argon2::password_hash::SaltString;
-use argon2::{Algorithm, Argon2, Params, PasswordHasher, Version};
+use std::sync::{
+    Arc,
+    LazyLock,
+};
+
+use argon2::{
+    password_hash::SaltString,
+    Algorithm,
+    Argon2,
+    Params,
+    PasswordHasher,
+    Version,
+};
 use aws_sdk_sesv2::operation::send_email::SendEmailInput;
 use secrecy::Secret;
-use sqlx::{Connection, Executor, PgConnection, PgPool};
-use std::sync::{Arc, LazyLock};
+use sqlx::{
+    Connection,
+    Executor,
+    PgConnection,
+    PgPool,
+};
 use uuid::Uuid;
-use zero2prod::bootstrap::Dependencies;
-use zero2prod::configuration::{get_configuration, DatabaseSettings};
-use zero2prod::startup::{get_connection_pool, Application};
-use zero2prod::telemetry::{get_subscriber, init_subscriber};
+use zero2prod::{
+    bootstrap::Dependencies,
+    configuration::{
+        get_configuration,
+        DatabaseSettings,
+    },
+    startup::{
+        get_connection_pool,
+        Application,
+    },
+    telemetry::{
+        get_subscriber,
+        init_subscriber,
+    },
+};
 
 pub async fn spawn_app() -> TestApp {
     LazyLock::force(&TRACING);

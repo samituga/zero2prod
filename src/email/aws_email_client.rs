@@ -1,14 +1,36 @@
-use crate::configuration::AwsSettings;
-use crate::domain::Email;
-use crate::email::email_client::{EmailClient, EmailClientProvider, SendEmailRequest};
-use anyhow::Context;
-use aws_config::timeout::TimeoutConfig;
-use aws_config::{BehaviorVersion, Region};
-use aws_sdk_sesv2::config::Credentials;
-use aws_sdk_sesv2::types::{Body, Content, Destination, EmailContent, Message};
-use aws_sdk_sesv2::Client;
-use secrecy::{ExposeSecret, Secret};
 use std::time::Duration;
+
+use anyhow::Context;
+use aws_config::{
+    timeout::TimeoutConfig,
+    BehaviorVersion,
+    Region,
+};
+use aws_sdk_sesv2::{
+    config::Credentials,
+    types::{
+        Body,
+        Content,
+        Destination,
+        EmailContent,
+        Message,
+    },
+    Client,
+};
+use secrecy::{
+    ExposeSecret,
+    Secret,
+};
+
+use crate::{
+    configuration::AwsSettings,
+    domain::Email,
+    email::email_client::{
+        EmailClient,
+        EmailClientProvider,
+        SendEmailRequest,
+    },
+};
 
 pub type SesClient = Client;
 
@@ -107,16 +129,33 @@ impl EmailClientProvider<SesClient> for SesClientFactory {
 
 #[cfg(test)]
 mod tests {
+    use aws_sdk_sesv2::{
+        operation::send_email::{
+            SendEmailError,
+            SendEmailOutput,
+        },
+        types::error::BadRequestException,
+    };
+    use aws_smithy_mocks_experimental::{
+        mock,
+        mock_client,
+        RuleMode,
+    };
+    use claims::{
+        assert_err,
+        assert_ok,
+    };
+    use fake::{
+        faker::{
+            internet::en::SafeEmail,
+            lorem::en::Paragraph,
+        },
+        Fake,
+    };
+    use tokio;
+
     use super::*;
     use crate::domain::SubscriberEmail;
-    use aws_sdk_sesv2::operation::send_email::{SendEmailError, SendEmailOutput};
-    use aws_sdk_sesv2::types::error::BadRequestException;
-    use aws_smithy_mocks_experimental::{mock, mock_client, RuleMode};
-    use claims::{assert_err, assert_ok};
-    use fake::faker::internet::en::SafeEmail;
-    use fake::faker::lorem::en::Paragraph;
-    use fake::Fake;
-    use tokio;
 
     #[tokio::test]
     async fn sends_email_with_correct_arguments() {

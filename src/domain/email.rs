@@ -1,4 +1,8 @@
-use std::fmt::{Display, Formatter};
+use std::fmt::{
+    Display,
+    Formatter,
+};
+
 use validator::ValidateEmail;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -29,10 +33,17 @@ impl Display for Email {
 #[cfg(test)]
 mod tests {
     use claims::assert_err;
-    use fake::faker::internet::en::SafeEmail;
-    use fake::Fake;
-    use proptest::prelude::{any, Strategy};
-    use proptest::proptest;
+    use fake::{
+        faker::internet::en::SafeEmail,
+        Fake,
+    };
+    use proptest::{
+        prelude::{
+            any,
+            Strategy,
+        },
+        proptest,
+    };
 
     use super::Email;
 

@@ -1,7 +1,9 @@
-use zero2prod::bootstrap::build_dependencies;
-use zero2prod::configuration::get_configuration;
-use zero2prod::startup::Application;
-use zero2prod::telemetry;
+use zero2prod::{
+    bootstrap::build_dependencies,
+    configuration::get_configuration,
+    startup::Application,
+    telemetry,
+};
 
 #[tokio::main]
 async fn main() -> Result<(), std::io::Error> {

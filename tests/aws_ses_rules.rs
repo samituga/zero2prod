@@ -1,14 +1,32 @@
-use aws_sdk_sesv2::config::interceptors::{
-    BeforeSerializationInterceptorContextMut, FinalizerInterceptorContextMut,
+use std::{
+    fmt::Debug,
+    sync::{
+        Arc,
+        Mutex,
+    },
 };
-use aws_sdk_sesv2::config::{ConfigBag, Intercept, Region, RuntimeComponents};
-use aws_sdk_sesv2::error::BoxError;
-use aws_sdk_sesv2::operation::send_email::{SendEmailInput, SendEmailOutput};
-use aws_sdk_sesv2::types::Body;
-use aws_sdk_sesv2::{Client, Config};
+
+use aws_sdk_sesv2::{
+    config::{
+        interceptors::{
+            BeforeSerializationInterceptorContextMut,
+            FinalizerInterceptorContextMut,
+        },
+        ConfigBag,
+        Intercept,
+        Region,
+        RuntimeComponents,
+    },
+    error::BoxError,
+    operation::send_email::{
+        SendEmailInput,
+        SendEmailOutput,
+    },
+    types::Body,
+    Client,
+    Config,
+};
 use aws_smithy_runtime_api::client::interceptors::context::Output;
-use std::fmt::Debug;
-use std::sync::{Arc, Mutex};
 
 pub struct AwsRequestsWrapper {
     requests: Arc<Mutex<Vec<SendEmailInput>>>,

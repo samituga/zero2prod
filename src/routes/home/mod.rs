@@ -1,5 +1,7 @@
-use actix_web::http::header::ContentType;
-use actix_web::HttpResponse;
+use actix_web::{
+    http::header::ContentType,
+    HttpResponse,
+};
 
 pub async fn home() -> HttpResponse {
     HttpResponse::Ok()

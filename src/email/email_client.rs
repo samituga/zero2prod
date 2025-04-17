@@ -1,6 +1,15 @@
-use crate::domain::{Email, SubscriberEmail};
-use crate::routes::error_chain_fmt;
-use std::fmt::{Debug, Formatter};
+use std::fmt::{
+    Debug,
+    Formatter,
+};
+
+use crate::{
+    domain::{
+        Email,
+        SubscriberEmail,
+    },
+    routes::error_chain_fmt,
+};
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct SendEmailRequest<'a> {
@@ -61,11 +70,16 @@ impl Debug for EmailClientError {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use claims::assert_ok;
-    use fake::faker::internet::en::SafeEmail;
-    use fake::faker::lorem::en::Paragraph;
-    use fake::Fake;
+    use fake::{
+        faker::{
+            internet::en::SafeEmail,
+            lorem::en::Paragraph,
+        },
+        Fake,
+    };
+
+    use super::*;
 
     struct MockEmailClient<'a> {
         expected_sender_email: Email,

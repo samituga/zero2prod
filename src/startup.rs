@@ -1,21 +1,50 @@
-use crate::bootstrap::Dependencies;
-use crate::configuration::{DatabaseSettings, Settings};
-use crate::email::email_client::{EmailClient, EmailService};
-use crate::routes::{
-    confirm, health_check, home, login, login_form, publish_newsletter, subscribe,
+use std::{
+    net::TcpListener,
+    sync::Arc,
 };
-use actix_web::cookie::Key;
-use actix_web::dev::Server;
-use actix_web::{web, App, HttpServer};
-use actix_web_flash_messages::storage::CookieMessageStore;
-use actix_web_flash_messages::FlashMessagesFramework;
+
+use actix_web::{
+    cookie::Key,
+    dev::Server,
+    web,
+    App,
+    HttpServer,
+};
+use actix_web_flash_messages::{
+    storage::CookieMessageStore,
+    FlashMessagesFramework,
+};
 use http::Uri;
-use secrecy::{ExposeSecret, Secret};
-use sqlx::postgres::PgPoolOptions;
-use sqlx::PgPool;
-use std::net::TcpListener;
-use std::sync::Arc;
+use secrecy::{
+    ExposeSecret,
+    Secret,
+};
+use sqlx::{
+    postgres::PgPoolOptions,
+    PgPool,
+};
 use tracing_actix_web::TracingLogger;
+
+use crate::{
+    bootstrap::Dependencies,
+    configuration::{
+        DatabaseSettings,
+        Settings,
+    },
+    email::email_client::{
+        EmailClient,
+        EmailService,
+    },
+    routes::{
+        confirm,
+        health_check,
+        home,
+        login,
+        login_form,
+        publish_newsletter,
+        subscribe,
+    },
+};
 
 pub struct Application {
     port: u16,
